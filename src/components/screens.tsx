@@ -2122,7 +2122,11 @@ export function IAMFleetHealth() {
             <span style={{ fontSize: 12, color: "#4B5563" }}>Risk: {drawerSite.risk} · Days since inspection: {drawerSite.days}</span>
           </div>
           {SITE_UNITS[drawerSite.site] ? (
-            <UnitsTable siteId={drawerSite.site} onRaise={(unitId) => setSrUnit({ siteName: drawerSite.site, unitId })} />
+            <UnitsTable
+              siteId={drawerSite.site}
+              onRaise={(unitId) => setSrUnit({ siteName: drawerSite.site, unitId })}
+              onHistory={(u) => setHistoryUnit(u)}
+            />
           ) : (
             <div className="p-4 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", fontSize: 13, color: "#4B5563" }}>
               Unit-level data is being sync'd from the field. {drawerSite.units} units installed.
@@ -2131,6 +2135,17 @@ export function IAMFleetHealth() {
               </div>
             </div>
           )}
+          {(() => {
+            const criticalUnits = SITE_UNITS[drawerSite.site]?.filter((u) => u.status === "Critical") ?? [];
+            if (criticalUnits.length === 0) return null;
+            return (
+              <div className="mt-4">
+                <Btn variant="crimson" size="sm" onClick={() => setBatchConfirm(true)}>
+                  <AlertTriangle size={12} /> Replace All Critical Units ({criticalUnits.length})
+                </Btn>
+              </div>
+            );
+          })()}
           <div className="mt-5">
             <Btn variant="ghost" size="sm" onClick={() => setDrawerSite(null)}>Close</Btn>
           </div>
@@ -2138,7 +2153,33 @@ export function IAMFleetHealth() {
       )}
 
       {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
+      {historyUnit && <UnitHistoryModal {...historyUnit} onClose={() => setHistoryUnit(null)} />}
       {pipelineOpen && <ReplacementPipelineModal onClose={() => setPipelineOpen(false)} />}
+      {batchConfirm && drawerSite && (() => {
+        const criticalUnits = SITE_UNITS[drawerSite.site]?.filter((u) => u.status === "Critical") ?? [];
+        return (
+          <ConfirmDialog
+            title="Replace All Critical Units"
+            body={<>Create service requests for all <strong>{criticalUnits.length}</strong> critical units at <strong>{drawerSite.site}</strong>?</>}
+            confirmLabel="Create Batch SRs"
+            onCancel={() => setBatchConfirm(false)}
+            onConfirm={() => {
+              const batchRef = "BATCH-" + Math.floor(1000 + Math.random() * 9000);
+              criticalUnits.forEach((u) => {
+                addServiceRequest({
+                  id: genId("SR"), siteName: drawerSite.site, unitId: u.unitId,
+                  type: "Replacement", priority: "Urgent",
+                  description: "Critical life-used threshold exceeded. Batch replacement.",
+                  status: "Submitted", raised: today, ts: Date.now(),
+                });
+              });
+              addNotification("Batch service requests created for " + criticalUnits.length + " critical units at " + drawerSite.site + ". Ref: " + batchRef);
+              toast.success("Batch SRs created. Reference: " + batchRef);
+              setBatchConfirm(false);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
