@@ -1366,6 +1366,22 @@ export function SecondarySales() {
 /* =================== ADMIN: GLOBAL DASHBOARD =================== */
 export function AdminDashboard() {
   const { setView } = useApp();
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [topOpen, setTopOpen] = useState(true);
+  const regionRows = [
+    { r: "NCR", d: 42, o: 312, v: "₹4.82 Cr", dor: 6 },
+    { r: "Maharashtra", d: 38, o: 248, v: "₹3.41 Cr", dor: 4 },
+    { r: "Tamil Nadu", d: 31, o: 201, v: "₹2.94 Cr", dor: 3 },
+    { r: "Karnataka", d: 27, o: 178, v: "₹2.10 Cr", dor: 5 },
+    { r: "Telangana", d: 19, o: 112, v: "₹1.55 Cr", dor: 7 },
+  ];
+  const topDealers = [
+    { rank: 1, name: "Royal Battery", city: "Meerut", orders: 24, value: "₹3.67 L", last: "1 day ago" },
+    { rank: 2, name: "Verma Battery House", city: "Gurgaon", orders: 31, value: "₹4.12 L", last: "Today" },
+    { rank: 3, name: "Singh Motors", city: "Noida", orders: 19, value: "₹2.98 L", last: "2 days ago" },
+    { rank: 4, name: "KK Batteries", city: "Pune", orders: 22, value: "₹2.76 L", last: "Today" },
+    { rank: 5, name: "Sri Venkat Electricals", city: "Chennai", orders: 17, value: "₹2.41 L", last: "3 days ago" },
+  ];
   return (
     <div>
       <PageHeader title="Cognilix Dashboard" sub="Unified demand and channel intelligence" />
