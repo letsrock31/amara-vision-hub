@@ -1668,9 +1668,9 @@ export function RSMDashboard() {
 
 /* =================== INDUSTRIAL CUSTOMER: MY SITES =================== */
 
-function ServiceRequestModal({ siteName, unitId, onClose }: { siteName: string; unitId: string; onClose: () => void }) {
-  const [type, setType] = useState("Inspection");
-  const [priority, setPriority] = useState("Normal");
+function ServiceRequestModal({ siteName, unitId, onClose, initialType, initialPriority }: { siteName: string; unitId: string; onClose: () => void; initialType?: string; initialPriority?: string }) {
+  const [type, setType] = useState(initialType ?? "Inspection");
+  const [priority, setPriority] = useState(initialPriority ?? "Normal");
   const [desc, setDesc] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
   const { addServiceRequest } = useApp();
