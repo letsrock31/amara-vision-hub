@@ -1742,7 +1742,7 @@ function ServiceRequestModal({ siteName, unitId, onClose, initialType, initialPr
   );
 }
 
-function UnitsTable({ siteId, onRaise }: { siteId: string; onRaise: (unitId: string) => void }) {
+function UnitsTable({ siteId, onRaise, onHistory }: { siteId: string; onRaise: (unitId: string) => void; onHistory: (unit: { unitId: string; model: string; installed: string; isCritical: boolean }) => void }) {
   const units = SITE_UNITS[siteId] ?? [];
   return (
     <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid #E5E7EB" }}>
@@ -1752,7 +1752,7 @@ function UnitsTable({ siteId, onRaise }: { siteId: string; onRaise: (unitId: str
             <th className="py-2 px-3">Unit ID</th><th className="py-2 px-3">Model</th>
             <th className="py-2 px-3">Installed</th><th className="py-2 px-3">Age</th>
             <th className="py-2 px-3" style={{ minWidth: 140 }}>Life Used</th>
-            <th className="py-2 px-3">Status</th><th className="py-2 px-3"></th>
+            <th className="py-2 px-3">Status</th><th className="py-2 px-3">History</th><th className="py-2 px-3"></th>
           </tr>
         </thead>
         <tbody>
@@ -1770,6 +1770,7 @@ function UnitsTable({ siteId, onRaise }: { siteId: string; onRaise: (unitId: str
                 <div style={{ fontSize: 10, color: "#4B5563", marginTop: 2 }}>{u.lifeUsed}%</div>
               </td>
               <td className="py-2 px-3"><StatusBadge status={u.status} /></td>
+              <td className="py-2 px-3"><Btn size="sm" variant="ghost" onClick={() => onHistory({ unitId: u.unitId, model: u.model, installed: u.installed, isCritical: u.status === "Critical" })}>History</Btn></td>
               <td className="py-2 px-3"><Btn size="sm" onClick={() => onRaise(u.unitId)}>Raise SR</Btn></td>
             </tr>
           ))}
