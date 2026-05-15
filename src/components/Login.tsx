@@ -7,7 +7,7 @@ export function Login() {
   const [selected, setSelected] = useState<Profile | "">("");
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#f2f2f0" }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#0D0D0D" }}>
       <div className="w-full max-w-md card-base" style={{ padding: 32 }}>
         <div className="flex items-center justify-center gap-3 mb-8">
           <span style={{ color: "#c00000", fontSize: 16, letterSpacing: "0.15em" }}>COGNILIX</span>
