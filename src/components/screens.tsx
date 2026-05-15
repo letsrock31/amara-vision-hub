@@ -1504,6 +1504,33 @@ export function RSMDashboard() {
 
       <SecondarySales />
       {visitDealer && <ScheduleVisitModal dealer={visitDealer} onClose={() => setVisitDealer(null)} />}
+      {posDealer && (
+        <CenterModal widthClass="max-w-lg">
+          <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>POS History: {posDealer.name}</h3>
+            <button onClick={() => setPosDealer(null)}><X size={18} /></button>
+          </div>
+          <div className="p-5">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-2 px-3">Date</th><th className="py-2 px-3">Product</th><th className="py-2 px-3">Total Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {posSample.map((p, i) => (
+                  <tr key={i} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2 px-3" style={{ color: "#4B5563" }}>{p.date}</td>
+                    <td className="py-2 px-3">{p.product}</td>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{p.qty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-end pt-4"><Btn onClick={() => setPosDealer(null)}>Close</Btn></div>
+          </div>
+        </CenterModal>
+      )}
     </div>
   );
 }
