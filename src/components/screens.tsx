@@ -2071,7 +2071,162 @@ export function IAMFleetHealth() {
 
 /* =================== IAM: CUSTOMERS DASHBOARD =================== */
 export function IAMCustomers() {
-  const { setView, setSelectedCustomer } = useApp();
+  const { setView, setSelectedCustomer, serviceRequests, addNotification } = useApp();
+  const [view360, setView360] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [meetDate, setMeetDate] = useState("");
+  const [meetTime, setMeetTime] = useState("9:00 AM");
+  const [meetAgenda, setMeetAgenda] = useState("");
+
+  if (view360) {
+    const customer = view360;
+    const sites = ALL_FLEET_SITES.filter((s) => s.customer === customer);
+    const criticalSites = sites.filter((s) => s.status === "Critical").length;
+    const contracts = CONTRACTS.filter((c) => c.customer === customer);
+    const siteIds = new Set(sites.map((s) => s.site));
+    const reqs = serviceRequests.filter((r) => r.siteName?.includes(customer) || siteIds.has(r.siteName));
+    const recentReqs = reqs.slice(0, 3);
+    const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
+    const timeSlots: string[] = [];
+    for (let h = 9; h <= 18; h++) {
+      const hr12 = h > 12 ? h - 12 : h;
+      const ampm = h >= 12 ? "PM" : "AM";
+      timeSlots.push(`${hr12}:00 ${ampm}`);
+      if (h < 18) timeSlots.push(`${hr12}:30 ${ampm}`);
+    }
+    const daysToExpiry = (end: string) => {
+      const d = new Date(end);
+      return Math.round((d.getTime() - Date.now()) / 86400000);
+    };
+    return (
+      <div>
+        <button onClick={() => setView360(null)} className="inline-flex items-center gap-2 mb-3" style={{ fontSize: 13, color: "#534AB7", fontWeight: 600 }}>
+          <ArrowLeft size={14} /> Back to Customers
+        </button>
+        <PageHeader title={customer} sub="Customer 360 View" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <StatCard label="Total Sites" value={String(sites.length)} accent="green" />
+          <StatCard label="Critical Sites" value={String(criticalSites)} accent="crimson" />
+          <StatCard label="Active Contracts" value={String(contracts.length)} accent="amber" />
+          <StatCard label="Open Service Requests" value={String(reqs.length)} accent="amber" />
+        </div>
+
+        <div className="card-base mb-4" style={{ borderTop: "3px solid #C00000" }}>
+          <div className="stat-label mb-3">Fleet Health Summary</div>
+          <div className="overflow-x-auto">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-2 px-3">Site ID</th><th className="py-2 px-3">Location</th><th className="py-2 px-3">Units</th><th className="py-2 px-3">Status</th><th className="py-2 px-3">Life Left %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sites.slice(0, 4).map((s) => {
+                  const lifeLeft = Math.max(0, 100 - s.days);
+                  return (
+                    <tr key={s.site} style={{ borderTop: "1px solid #E5E7EB" }}>
+                      <td className="py-2 px-3" style={{ fontWeight: 600 }}>{s.site}</td>
+                      <td className="py-2 px-3" style={{ color: "#4B5563" }}>{s.location}</td>
+                      <td className="py-2 px-3">{s.units}</td>
+                      <td className="py-2 px-3"><StatusBadge status={s.status} /></td>
+                      <td className="py-2 px-3" style={{ fontWeight: 600 }}>{lifeLeft}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="card-base mb-4" style={{ borderTop: "3px solid #00A651" }}>
+          <div className="stat-label mb-3">Active Contracts</div>
+          <div className="space-y-2">
+            {contracts.length === 0 && <div style={{ fontSize: 13, color: "#6B7280" }}>No active contracts.</div>}
+            {contracts.map((c) => {
+              const dte = daysToExpiry(c.end);
+              const amber = dte < 60;
+              return (
+                <div key={c.id} className="flex justify-between items-center py-2" style={{ borderBottom: "1px solid #E5E7EB", fontSize: 13 }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{c.id}</div>
+                    <div style={{ fontSize: 12, color: "#4B5563" }}>{c.product}</div>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#4B5563" }}>{c.remaining} units left</div>
+                  <div style={{ fontSize: 12, color: amber ? "#EF9F27" : "#4B5563", fontWeight: amber ? 700 : 400 }}>
+                    {c.end}{amber ? ` · ${dte}d` : ""}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="card-base mb-4">
+          <div className="stat-label mb-3">Recent Service Requests</div>
+          {recentReqs.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#6B7280" }}>No service requests yet.</div>
+          ) : (
+            <div className="space-y-2">
+              {recentReqs.map((r) => (
+                <div key={r.id} className="flex justify-between items-center py-2" style={{ borderBottom: "1px solid #E5E7EB", fontSize: 13 }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{r.id}</div>
+                    <div style={{ fontSize: 12, color: "#4B5563" }}>{r.siteName} · {r.type}</div>
+                  </div>
+                  <StatusBadge status={r.status || "Open"} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="card-base mb-4">
+          <div className="stat-label mb-3">Account Manager</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Arjun Sharma</div>
+          <div className="flex items-center gap-3 mt-2" style={{ fontSize: 13, color: "#4B5563" }}>
+            <span className="inline-flex items-center gap-1"><Phone size={12} /> +91 98118 76543</span>
+            <span className="inline-flex items-center gap-1"><Mail size={12} /> arjun.sharma@cognilix.com</span>
+          </div>
+          <div className="mt-3"><Btn size="sm" onClick={() => setScheduleOpen(true)}>Schedule Review Call</Btn></div>
+        </div>
+
+        {scheduleOpen && (
+          <CenterModal widthClass="max-w-md">
+            <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Schedule Review Call — {customer}</h3>
+              <button onClick={() => setScheduleOpen(false)}><X size={18} /></button>
+            </div>
+            <form
+              className="p-5 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const mtgId = "MTG-" + Math.floor(1000 + Math.random() * 9000);
+                addNotification("Review call with " + customer + " scheduled");
+                toast.success("Meeting scheduled. Reference: " + mtgId);
+                setScheduleOpen(false);
+                setMeetDate(""); setMeetAgenda("");
+              }}
+            >
+              <div><label className="stat-label block mb-1">Date</label><input type="date" required value={meetDate} onChange={(e) => setMeetDate(e.target.value)} style={inp} /></div>
+              <div><label className="stat-label block mb-1">Time</label>
+                <select value={meetTime} onChange={(e) => setMeetTime(e.target.value)} style={inp}>
+                  {timeSlots.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div><label className="stat-label block mb-1">Agenda</label>
+                <textarea required value={meetAgenda} onChange={(e) => setMeetAgenda(e.target.value)} rows={3} style={inp} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Btn type="button" variant="ghost" size="sm" onClick={() => setScheduleOpen(false)}>Cancel</Btn>
+                <Btn type="submit">Schedule</Btn>
+              </div>
+            </form>
+          </CenterModal>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader title="My Customers" sub="Indus Towers · BSNL · Hitachi UPS Solutions" />
@@ -2100,7 +2255,7 @@ export function IAMCustomers() {
             borderTop: `3px solid ${x.status === "Critical" ? "#C00000" : "#EF9F27"}`,
           }}>
             <div className="flex justify-between items-start">
-              <div style={{ fontSize: 16, fontWeight: 600 }}>{x.c}</div>
+              <div onClick={() => setView360(x.c)} style={{ fontSize: 16, fontWeight: 600, cursor: "pointer" }}>{x.c}</div>
               <StatusBadge status={x.status} />
             </div>
             <div className="grid grid-cols-3 gap-2 mt-4">
@@ -2108,7 +2263,8 @@ export function IAMCustomers() {
               <div><div className="stat-label">Units</div><div style={{ fontSize: 22, fontWeight: 700 }}>{x.units}</div></div>
               <div><div className="stat-label">Contracts</div><div style={{ fontSize: 22, fontWeight: 700 }}>{x.contracts}</div></div>
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex gap-2 flex-wrap">
+              <Btn variant="ghost" size="sm" onClick={() => setView360(x.c)}>360 View</Btn>
               <Btn variant="ghost" size="sm" onClick={() => { setSelectedCustomer(x.c); setView("fleet-health"); }}>View Fleet</Btn>
               <Btn size="sm" onClick={() => { setSelectedCustomer(x.c); setView("contracts"); }}>View Contracts</Btn>
             </div>
