@@ -63,7 +63,7 @@ export function DealerHome() {
 export function ProductCatalog() {
   const [filter, setFilter] = useState<"All" | "2W" | "4W" | "Industrial">("All");
   const [search, setSearch] = useState("");
-  const [cart, setCart] = useState<Record<string, number>>({});
+  const { cart, setCart } = useApp();
   const [cartOpen, setCartOpen] = useState(false);
 
   const filtered = PRODUCTS.filter((p) =>
@@ -71,11 +71,21 @@ export function ProductCatalog() {
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const cartItems = Object.entries(cart).map(([id, q]) => ({ p: PRODUCTS.find((x) => x.id === id)!, q }));
-  const subtotal = cartItems.reduce((s, i) => s + i.p.price * i.q, 0);
+  const cartItems = cart.map((c) => ({ p: PRODUCTS.find((x) => x.id === c.id)!, q: c.qty }));
+  const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
+
+  const updateQty = (id: string, delta: number) => {
+    const next = cart
+      .map((c) => (c.id === id ? { ...c, qty: c.qty + delta } : c))
+      .filter((c) => c.qty > 0);
+    setCart(next);
+  };
 
   const add = (id: string) => {
-    setCart((c) => ({ ...c, [id]: (c[id] ?? 0) + 1 }));
+    const p = PRODUCTS.find((x) => x.id === id)!;
+    const exists = cart.find((c) => c.id === id);
+    if (exists) updateQty(id, 1);
+    else setCart([...cart, { id, name: p.name, price: p.price, qty: 1 }]);
     setCartOpen(true);
   };
 
