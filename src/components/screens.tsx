@@ -1465,6 +1465,39 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
+      <div className="card-base mb-5">
+        <button onClick={() => setTopOpen((o) => !o)} className="w-full flex justify-between items-center">
+          <div className="stat-label">Top Dealers by Order Value (MTD)</div>
+          {topOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        {topOpen && (
+          <div className="overflow-x-auto mt-3">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-2 px-3">Rank</th><th className="py-2 px-3">Dealer</th><th className="py-2 px-3">City</th>
+                  <th className="py-2 px-3">Orders</th><th className="py-2 px-3">Value (MTD)</th><th className="py-2 px-3">Last Order</th><th className="py-2 px-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {topDealers.map((d) => (
+                  <tr key={d.rank} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>#{d.rank}</td>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{d.name}</td>
+                    <td className="py-2 px-3" style={{ color: "#4B5563" }}>{d.city}</td>
+                    <td className="py-2 px-3">{d.orders}</td>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{d.value}</td>
+                    <td className="py-2 px-3" style={{ color: "#4B5563" }}>{d.last}</td>
+                    <td className="py-2 px-3">
+                      <button onClick={() => setView("dealer-orders")} aria-label="View dealer orders"><ArrowRight size={16} color="#534AB7" /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
