@@ -1,25 +1,146 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, ReactNode, useEffect } from "react";
 import { toast } from "sonner";
 import {
   PRODUCTS, DEALER_ORDERS, REGIONAL_ORDERS, SKU_SELLTHROUGH, REGIONS,
   STOCKOUT_ALERTS, SITES, SITE_UNITS, ALL_FLEET_SITES, CONTRACTS,
   fmtINR, fmtINRLakh,
 } from "@/lib/mock-data";
-import { useApp } from "@/lib/app-context";
-import { StatCard, StatusBadge, PageHeader, AISuggestions, CogniqBanner, Btn, FilterBar, Pagination } from "./ui-bits";
-import { Search, ShoppingCart, X, Plus, Minus, ArrowRight, Trash2 } from "lucide-react";
+import { useApp, type CartItem, type DealerOrder } from "@/lib/app-context";
+import { StatCard, StatusBadge, PageHeader, AISuggestions, Btn, FilterBar, Pagination } from "./ui-bits";
+import { Search, ShoppingCart, X, Plus, Minus, ArrowRight, Trash2, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Package } from "lucide-react";
 
 const PAGE_SIZE = 8;
+const DELIVERY_ADDRESS = "Shop 14, Chandni Chowk Market, Delhi 110006";
+
+/* =================== SHARED OVERLAY HELPERS =================== */
+
+function CenterModal({ children, widthClass = "max-w-lg" }: { children: ReactNode; widthClass?: string }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3">
+      <div className="absolute inset-0 bg-black/50" />
+      <div
+        className={`relative bg-white w-full ${widthClass} rounded-xl overflow-hidden`}
+        style={{ border: "1px solid #E5E7EB", maxHeight: "92vh", display: "flex", flexDirection: "column" }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function RightDrawer({ title, sub, onClose, children }: { title: string; sub?: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-[60]">
+      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className="absolute top-0 right-0 h-full bg-white overflow-y-auto"
+        style={{ width: "min(560px, 100%)", borderLeft: "1px solid #E5E7EB", boxShadow: "-12px 0 24px rgba(0,0,0,0.08)" }}
+      >
+        <div className="flex justify-between items-start px-5 py-4 sticky top-0 bg-white" style={{ borderBottom: "1px solid #E5E7EB", zIndex: 1 }}>
+          <div>
+            <h2 style={{ fontSize: 17, fontWeight: 700 }}>{title}</h2>
+            {sub && <div style={{ fontSize: 12, color: "#4B5563", marginTop: 2 }}>{sub}</div>}
+          </div>
+          <button onClick={onClose} aria-label="Close"><X size={18} /></button>
+        </div>
+        <div className="p-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmDialog({ title, body, confirmLabel = "Confirm", onConfirm, onCancel }: {
+  title: string; body: ReactNode; confirmLabel?: string; onConfirm: () => void; onCancel: () => void;
+}) {
+  return (
+    <CenterModal widthClass="max-w-md">
+      <div className="px-5 py-4" style={{ borderBottom: "1px solid #E5E7EB" }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700 }}>{title}</h3>
+      </div>
+      <div className="p-5" style={{ fontSize: 14, color: "#0A0A0F" }}>{body}</div>
+      <div className="px-5 py-3 flex justify-end gap-2" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+        <Btn variant="ghost" size="sm" onClick={onCancel}>Cancel</Btn>
+        <Btn size="sm" onClick={onConfirm}>{confirmLabel}</Btn>
+      </div>
+    </CenterModal>
+  );
+}
+
+/* =================== TIMELINE =================== */
+
+const TRACK_STAGES = ["Order Placed", "Confirmed by Warehouse", "Dispatched", "Out for Delivery", "Delivered"];
+
+function activeIndexFor(status: string) {
+  if (status === "Delivered") return 4;
+  if (status === "Out for Delivery") return 3;
+  if (status === "Dispatched") return 2;
+  if (status === "Processing" || status === "Confirmed") return 1;
+  return 0;
+}
+
+function StageTimeline({ status }: { status: string }) {
+  const active = activeIndexFor(status);
+  return (
+    <div className="space-y-3">
+      {TRACK_STAGES.map((stage, i) => {
+        const done = i <= active;
+        const isCurrent = i === active && status !== "Delivered";
+        const color = isCurrent ? "#C00000" : done ? "#15803D" : "#D1D5DB";
+        return (
+          <div key={stage} className="flex items-start gap-3">
+            <div className="flex flex-col items-center" style={{ minWidth: 18 }}>
+              <div
+                style={{
+                  width: 18, height: 18, borderRadius: "50%",
+                  background: done ? color : "#FFFFFF",
+                  border: `2px solid ${color}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                {done && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FFFFFF" }} />}
+              </div>
+              {i < TRACK_STAGES.length - 1 && (
+                <div style={{ width: 2, flex: 1, minHeight: 24, background: i < active ? "#15803D" : "#E5E7EB", marginTop: 2 }} />
+              )}
+            </div>
+            <div className="pb-3">
+              <div style={{ fontSize: 14, fontWeight: isCurrent ? 700 : 600, color: isCurrent ? "#C00000" : "#0A0A0F" }}>{stage}</div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
+                {done && !isCurrent ? "Completed" : isCurrent ? "In progress" : "Pending"}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* =================== SUCCESS BANNER =================== */
+
+function SuccessBanner({ text, onClose }: { text: string; onClose?: () => void }) {
+  return (
+    <div className="rounded-lg p-3 mb-4 flex items-start gap-3" style={{ background: "#DCFCE7", border: "1px solid #86EFAC" }}>
+      <CheckCircle2 size={18} color="#15803D" style={{ marginTop: 1 }} />
+      <div className="flex-1" style={{ fontSize: 13, color: "#14532D", fontWeight: 600 }}>{text}</div>
+      {onClose && <button onClick={onClose}><X size={16} color="#14532D" /></button>}
+    </div>
+  );
+}
 
 /* =================== DEALER: HOME =================== */
 export function DealerHome() {
-  const { setView } = useApp();
+  const { setView, addToCart } = useApp();
+  const reorderNow = () => {
+    addToCart({ id: "P1", name: "Amaron Pro 35Ah 4W", price: 4200, qty: 40 });
+    setView("catalog");
+  };
   return (
     <div>
       <PageHeader title="Welcome back, Sharma Auto Parts" sub="Quick view of your store activity" />
       <AISuggestions
         items={[
-          { text: "Amaron Pro 35Ah may run out in 9 days based on your sales pattern. Reorder 40 units now to avoid stock-out.", action: "Reorder", onAction: () => setView("catalog") },
+          { text: "Amaron Pro 35Ah may run out in 9 days based on your sales pattern. Reorder 40 units now to avoid stock-out.", action: "Reorder Now", onAction: reorderNow },
           { text: "‘Summer Boost’ scheme is active — earn 2% extra credit on orders above ₹2 L till 31 May.", action: "View Catalog", onAction: () => setView("catalog") },
           { text: "Your 9-day order gap exceeds your 7-day average. Place a quick reorder to maintain shelf health.", action: "Quick Reorder", onAction: () => setView("catalog") },
           { text: "Powerzone Hummer 65Ah trending +18% in your region — consider stocking 12 units.", action: "Add to Cart", onAction: () => setView("catalog") },
@@ -36,13 +157,13 @@ export function DealerHome() {
           <div className="stat-label mb-3">Quick actions</div>
           <div className="flex flex-col gap-2">
             <button onClick={() => setView("catalog")} className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-[#F3F4F6]" style={{ border: "1px solid #E5E7EB", fontSize: 14 }}>
-              Browse Product Catalog <ArrowRight size={16} />
+              Browse Catalog <ArrowRight size={16} />
             </button>
             <button onClick={() => setView("orders")} className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-[#F3F4F6]" style={{ border: "1px solid #E5E7EB", fontSize: 14 }}>
-              Track My Orders <ArrowRight size={16} />
+              View My Orders <ArrowRight size={16} />
             </button>
             <button onClick={() => setView("pos")} className="flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-[#F3F4F6]" style={{ border: "1px solid #E5E7EB", fontSize: 14 }}>
-              Log Today's Sales (POS) <ArrowRight size={16} />
+              Log a Sale <ArrowRight size={16} />
             </button>
           </div>
         </div>
@@ -141,10 +262,7 @@ export function ProductCatalog() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((p) => (
           <div key={p.id} className="card-base flex flex-col">
-            <div
-              className="rounded-md overflow-hidden mb-3"
-              style={{ height: 160, background: "#F3F4F6" }}
-            >
+            <div className="rounded-md overflow-hidden mb-3" style={{ height: 160, background: "#F3F4F6" }}>
               <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div className="flex items-start justify-between gap-2 mb-1">
@@ -169,9 +287,7 @@ export function ProductCatalog() {
             </div>
             <div className="flex items-center justify-between mt-3 gap-2">
               <div className="flex items-center" style={{ border: "1px solid #D1D5DB", borderRadius: 6 }}>
-                <button onClick={() => setQty(p.id, getQty(p.id) - 1)} style={{ padding: "6px 8px" }} aria-label="Decrease">
-                  <Minus size={14} />
-                </button>
+                <button onClick={() => setQty(p.id, getQty(p.id) - 1)} style={{ padding: "6px 8px" }} aria-label="Decrease"><Minus size={14} /></button>
                 <input
                   type="number"
                   value={getQty(p.id)}
@@ -179,9 +295,7 @@ export function ProductCatalog() {
                   className="text-center"
                   style={{ width: 44, fontSize: 13, padding: "5px 0", border: "none", outline: "none" }}
                 />
-                <button onClick={() => setQty(p.id, getQty(p.id) + 1)} style={{ padding: "6px 8px" }} aria-label="Increase">
-                  <Plus size={14} />
-                </button>
+                <button onClick={() => setQty(p.id, getQty(p.id) + 1)} style={{ padding: "6px 8px" }} aria-label="Increase"><Plus size={14} /></button>
               </div>
               <Btn onClick={() => handleAdd(p.id)} size="sm">Add to Cart</Btn>
             </div>
@@ -192,9 +306,79 @@ export function ProductCatalog() {
   );
 }
 
-/* =================== DEALER: CART (full page) =================== */
+/* =================== DEALER: CART =================== */
+
+function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
+  cart: CartItem[]; total: number;
+  onCancel: () => void;
+  onConfirm: (deliveryDate: string) => void;
+}) {
+  const defaultDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  const [date, setDate] = useState(defaultDate);
+  return (
+    <CenterModal widthClass="max-w-2xl">
+      <div className="px-5 py-4" style={{ borderBottom: "1px solid #E5E7EB", background: "#EEF0FF" }}>
+        <h3 style={{ fontSize: 17, fontWeight: 700 }}>Confirm Your Order</h3>
+        <div style={{ fontSize: 12, color: "#4B5563", marginTop: 2 }}>Review the details below and confirm to place your order.</div>
+      </div>
+      <div className="p-5 overflow-y-auto" style={{ flex: 1 }}>
+        <div className="mb-4">
+          <label className="stat-label block mb-1">Delivery Address</label>
+          <input
+            value={DELIVERY_ADDRESS}
+            readOnly
+            className="w-full px-3 py-2 rounded-md"
+            style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#F3F4F6" }}
+          />
+        </div>
+        <div className="mb-4">
+          <label className="stat-label block mb-1">Preferred Delivery Date</label>
+          <input
+            type="date"
+            value={date}
+            min={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full px-3 py-2 rounded-md"
+            style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF" }}
+          />
+        </div>
+        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid #E5E7EB" }}>
+          <table className="w-full" style={{ fontSize: 13 }}>
+            <thead style={{ background: "#F9FAFB" }}>
+              <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                <th className="py-2 px-3">Item</th>
+                <th className="py-2 px-3">Qty</th>
+                <th className="py-2 px-3" style={{ textAlign: "right" }}>Line total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cart.map((c) => (
+                <tr key={c.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                  <td className="py-2 px-3">{c.name}</td>
+                  <td className="py-2 px-3">{c.qty}</td>
+                  <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
+                </tr>
+              ))}
+              <tr style={{ background: "#F9FAFB", borderTop: "1px solid #E5E7EB" }}>
+                <td className="py-3 px-3" style={{ fontWeight: 700 }} colSpan={2}>Order Total</td>
+                <td className="py-3 px-3" style={{ textAlign: "right", fontWeight: 700, fontSize: 14 }}>{fmtINR(total)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="px-5 py-3 flex justify-end gap-2" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+        <Btn variant="ghost" size="sm" onClick={onCancel}>Cancel</Btn>
+        <Btn size="sm" onClick={() => onConfirm(date)}>Confirm Order</Btn>
+      </div>
+    </CenterModal>
+  );
+}
+
 export function CartPage() {
-  const { cart, setCart, setView } = useApp();
+  const { cart, setCart, setView, addOrder } = useApp();
+  const [confirming, setConfirming] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
   const gst = Math.round(subtotal * 0.18);
   const delivery = subtotal > 200000 ? 0 : 500;
@@ -205,7 +389,19 @@ export function CartPage() {
     else setCart(cart.map((c) => c.id === id ? { ...c, qty: q } : c));
   };
 
-  if (cart.length === 0) {
+  const placeOrder = (deliveryDate: string) => {
+    const id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+    const eta = new Date(new Date(deliveryDate).getTime() + 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const itemsStr = cart.map((c) => `${c.name} ×${c.qty}`).join(", ");
+    const order: DealerOrder = { id, date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }), items: itemsStr, total, status: "Processing", eta, cart: [...cart] };
+    addOrder(order);
+    setCart([]);
+    setConfirming(false);
+    setSuccess(`Order ${id} placed successfully. Estimated delivery: ${eta}`);
+    setTimeout(() => setView("orders"), 1500);
+  };
+
+  if (cart.length === 0 && !success) {
     return (
       <div>
         <PageHeader title="Your Cart" sub="Review items before placing your order" />
@@ -222,70 +418,81 @@ export function CartPage() {
 
   return (
     <div>
+      {success && <SuccessBanner text={success} />}
       <PageHeader title="Your Cart" sub={`${cart.length} item${cart.length === 1 ? "" : "s"} · Review and proceed to checkout`} />
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 card-base p-0">
-          <table className="w-full" style={{ fontSize: 13 }}>
-            <thead>
-              <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
-                <th className="py-3 px-4">Product</th>
-                <th className="py-3 px-4">Price</th>
-                <th className="py-3 px-4">Quantity</th>
-                <th className="py-3 px-4">Total</th>
-                <th className="py-3 px-4"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {cart.map((c) => (
-                <tr key={c.id} style={{ borderTop: "1px solid #E5E7EB" }}>
-                  <td className="py-3 px-4" style={{ fontWeight: 500 }}>{c.name}</td>
-                  <td className="py-3 px-4">{fmtINR(c.price)}</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center" style={{ border: "1px solid #D1D5DB", borderRadius: 6, width: "fit-content" }}>
-                      <button onClick={() => updateQty(c.id, c.qty - 1)} style={{ padding: "4px 8px" }}><Minus size={12} /></button>
-                      <span style={{ minWidth: 32, textAlign: "center" }}>{c.qty}</span>
-                      <button onClick={() => updateQty(c.id, c.qty + 1)} style={{ padding: "4px 8px" }}><Plus size={12} /></button>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
-                  <td className="py-3 px-4">
-                    <button onClick={() => updateQty(c.id, 0)} aria-label="Remove"><Trash2 size={16} color="#C00000" /></button>
-                  </td>
+      {cart.length > 0 && (
+        <div className="grid lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 card-base p-0">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-3 px-4">Product</th>
+                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4">Quantity</th>
+                  <th className="py-3 px-4">Total</th>
+                  <th className="py-3 px-4"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {cart.map((c) => (
+                  <tr key={c.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-3 px-4" style={{ fontWeight: 500 }}>{c.name}</td>
+                    <td className="py-3 px-4">{fmtINR(c.price)}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center" style={{ border: "1px solid #D1D5DB", borderRadius: 6, width: "fit-content" }}>
+                        <button onClick={() => updateQty(c.id, c.qty - 1)} style={{ padding: "4px 8px" }}><Minus size={12} /></button>
+                        <span style={{ minWidth: 32, textAlign: "center" }}>{c.qty}</span>
+                        <button onClick={() => updateQty(c.id, c.qty + 1)} style={{ padding: "4px 8px" }}><Plus size={12} /></button>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
+                    <td className="py-3 px-4">
+                      <button onClick={() => updateQty(c.id, 0)} aria-label="Remove"><Trash2 size={16} color="#C00000" /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        <div className="card-base h-fit" style={{ borderTop: "3px solid #5B5BF5" }}>
-          <div className="stat-label mb-3">Order Summary</div>
-          <div className="space-y-2.5" style={{ fontSize: 14 }}>
-            <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Subtotal</span><span>{fmtINR(subtotal)}</span></div>
-            <div className="flex justify-between"><span style={{ color: "#4B5563" }}>GST (18%)</span><span>{fmtINR(gst)}</span></div>
-            <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery</span><span>{delivery === 0 ? "FREE" : fmtINR(delivery)}</span></div>
-            <div className="flex justify-between pt-3" style={{ borderTop: "1px solid #E5E7EB", fontSize: 16, fontWeight: 700 }}>
-              <span>Total</span><span>{fmtINR(total)}</span>
+          <div className="card-base h-fit" style={{ borderTop: "3px solid #5B5BF5" }}>
+            <div className="stat-label mb-3">Order Summary</div>
+            <div className="space-y-2.5" style={{ fontSize: 14 }}>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Subtotal</span><span>{fmtINR(subtotal)}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>GST (18%)</span><span>{fmtINR(gst)}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery</span><span>{delivery === 0 ? "FREE" : fmtINR(delivery)}</span></div>
+              <div className="flex justify-between pt-3" style={{ borderTop: "1px solid #E5E7EB", fontSize: 16, fontWeight: 700 }}>
+                <span>Total</span><span>{fmtINR(total)}</span>
+              </div>
             </div>
+            <div className="mt-4 p-3 rounded" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, color: "#2B31B8" }}>
+              Cogniq: Adding 4 more units of Amaron Pro 35Ah qualifies you for a 3% volume discount.
+            </div>
+            <button
+              onClick={() => setConfirming(true)}
+              className="w-full mt-4 py-3 rounded-md text-white"
+              style={{ background: "#C00000", fontSize: 14, fontWeight: 700 }}
+            >
+              Place Order
+            </button>
+            <button
+              onClick={() => setView("catalog")}
+              className="w-full mt-2 py-2.5 rounded-md"
+              style={{ background: "#FFFFFF", border: "1px solid #D1D5DB", fontSize: 13, fontWeight: 600 }}
+            >
+              Continue Shopping
+            </button>
           </div>
-          <div className="mt-4 p-3 rounded" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, color: "#2B31B8" }}>
-            Cogniq: Adding 4 more units of Amaron Pro 35Ah qualifies you for a 3% volume discount.
-          </div>
-          <button
-            onClick={() => { toast.success(`Order placed — ${fmtINR(total)} · ETA 3-5 days`); setCart([]); setView("orders"); }}
-            className="w-full mt-4 py-3 rounded-md text-white"
-            style={{ background: "#C00000", fontSize: 14, fontWeight: 700 }}
-          >
-            Proceed to Checkout
-          </button>
-          <button
-            onClick={() => setView("catalog")}
-            className="w-full mt-2 py-2.5 rounded-md"
-            style={{ background: "#FFFFFF", border: "1px solid #D1D5DB", fontSize: 13, fontWeight: 600 }}
-          >
-            Continue Shopping
-          </button>
         </div>
-      </div>
+      )}
+      {confirming && (
+        <OrderConfirmationModal
+          cart={cart}
+          total={total}
+          onCancel={() => setConfirming(false)}
+          onConfirm={placeOrder}
+        />
+      )}
     </div>
   );
 }
@@ -295,10 +502,14 @@ export function MyOrders() {
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState("30d");
   const [page, setPage] = useState(1);
-  const { openAction } = useApp();
-  const filtered = DEALER_ORDERS.filter((o) =>
-    o.id.toLowerCase().includes(search.toLowerCase()) ||
-    o.items.toLowerCase().includes(search.toLowerCase())
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [trackOrder, setTrackOrder] = useState<DealerOrder | null>(null);
+  const { orders } = useApp();
+
+  const all: DealerOrder[] = useMemo(() => [...orders, ...DEALER_ORDERS], [orders]);
+  const filtered = all.filter((o) =>
+    (statusFilter === "All" || o.status === statusFilter) &&
+    (o.id.toLowerCase().includes(search.toLowerCase()) || o.items.toLowerCase().includes(search.toLowerCase()))
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -308,12 +519,29 @@ export function MyOrders() {
       <PageHeader title="My Orders" sub="Track every order placed with Amara Raja" />
       <AISuggestions
         items={[
-          { text: "ORD-7860 (Amaron Hi-Life ×24) is processing — projected to dispatch by 18 May.", action: "Track" },
+          { text: "ORD-7860 (Amaron Hi-Life ×24) is processing — projected to dispatch by 18 May.", action: "Track", onAction: () => setTrackOrder(DEALER_ORDERS.find((o) => o.id === "ORD-7860") ?? null) },
           { text: "Based on your sales pattern, Amaron Pro 35Ah may run out in 9 days. Reorder now?", action: "Reorder" },
           { text: "Your average order cycle is 7 days. Consider scheduling weekly auto-reorders for top SKUs.", action: "Set up Auto-reorder" },
         ]}
       />
       <FilterBar search={search} onSearch={(v) => { setSearch(v); setPage(1); }} dateRange={dateRange} onDateRange={setDateRange} />
+      <div className="flex gap-2 mb-3 flex-wrap">
+        {["All", "Processing", "Dispatched", "Delivered"].map((s) => (
+          <button
+            key={s}
+            onClick={() => { setStatusFilter(s); setPage(1); }}
+            className="px-3 py-1.5 rounded-full"
+            style={{
+              fontSize: 12, fontWeight: 600,
+              background: statusFilter === s ? "#0A0A0F" : "#FFFFFF",
+              color: statusFilter === s ? "#FFFFFF" : "#0A0A0F",
+              border: "1px solid #D1D5DB",
+            }}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
       <div className="card-base p-0 overflow-x-auto">
         <table className="w-full" style={{ fontSize: 13 }}>
           <thead>
@@ -332,31 +560,34 @@ export function MyOrders() {
                 <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(o.total)}</td>
                 <td className="py-3 px-4"><StatusBadge status={o.status} /></td>
                 <td className="py-3 px-4" style={{ color: "#4B5563" }}>{o.eta}</td>
-                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
-                  title: `Track Order ${o.id}`,
-                  description: `Live status for your order.`,
-                  summary: [
-                    { label: "Order ID", value: o.id },
-                    { label: "Items", value: o.items },
-                    { label: "Total", value: fmtINR(o.total) },
-                    { label: "Status", value: o.status },
-                    { label: "ETA", value: o.eta },
-                    { label: "Carrier", value: "Amara Logistics · AWB-" + o.id.slice(-4) + "21" },
-                  ],
-                  fields: [
-                    { type: "select", name: "support", label: "Need help?", options: ["No issue — just tracking", "Delivery delay", "Wrong items expected", "Reschedule delivery"] },
-                    { type: "textarea", name: "notes", label: "Message to dispatch (optional)" },
-                  ],
-                  confirmLabel: "Notify Dispatch",
-                  successTitle: "Dispatch notified",
-                  successDescription: "Our logistics team will respond within 2 working hours.",
-                })}>Track</Btn></td>
+                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => setTrackOrder(o)}>Track</Btn></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+      {trackOrder && (
+        <CenterModal widthClass="max-w-xl">
+          <div className="px-5 py-4 flex justify-between items-start" style={{ borderBottom: "1px solid #E5E7EB", background: "#EEF0FF" }}>
+            <div>
+              <h3 style={{ fontSize: 17, fontWeight: 700 }}>Order Tracking</h3>
+              <div style={{ fontSize: 12, color: "#4B5563", marginTop: 2 }}>{trackOrder.id} · placed on {trackOrder.date}</div>
+            </div>
+            <button onClick={() => setTrackOrder(null)}><X size={18} /></button>
+          </div>
+          <div className="p-5 overflow-y-auto">
+            <StageTimeline status={trackOrder.status} />
+            <div className="mt-4 p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", fontSize: 13 }}>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Estimated delivery</span><span style={{ fontWeight: 700 }}>{trackOrder.eta}</span></div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 6 }}>For support, contact your ARE&amp;M Sales Manager.</div>
+            </div>
+          </div>
+          <div className="px-5 py-3 flex justify-end" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+            <Btn variant="ghost" size="sm" onClick={() => setTrackOrder(null)}>Close</Btn>
+          </div>
+        </CenterModal>
+      )}
     </div>
   );
 }
@@ -478,13 +709,77 @@ export function POSEntry() {
 }
 
 /* =================== ADMIN/RSM: DEALER ORDERS =================== */
+
+type RegOrder = typeof REGIONAL_ORDERS[number];
+
+function OrderDetailDrawer({ order, onClose }: { order: RegOrder; onClose: () => void }) {
+  // synthesize line items from skus string
+  const lineItems = order.skus.split(",").map((s) => s.trim()).map((s, i) => {
+    const m = s.match(/^(.+?) ×(\d+)$/);
+    const name = m ? m[1] : s;
+    const qty = m ? Number(m[2]) : 1;
+    const unitPrice = Math.round(order.value / Math.max(1, qty * (order.skus.split(",").length))) || 0;
+    return { sku: name, qty, unitPrice, total: unitPrice * qty, key: i };
+  });
+  const eta = (() => {
+    const d = order.date.split(" ");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const dt = new Date(2026, months.indexOf(d[1]), Number(d[0]) + 4);
+    return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  })();
+  return (
+    <RightDrawer title="Order Details" sub={order.id} onClose={onClose}>
+      <div className="space-y-1 mb-4" style={{ fontSize: 13 }}>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Order ID</span><span style={{ fontWeight: 700 }}>{order.id}</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Dealer</span><span style={{ fontWeight: 600 }}>{order.dealer}</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Location</span><span>{order.location}</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Order Date</span><span>{order.date}</span></div>
+        <div className="flex justify-between items-center"><span style={{ color: "#4B5563" }}>Status</span><StatusBadge status={order.status} /></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Estimated Delivery</span><span style={{ fontWeight: 600 }}>{eta}</span></div>
+      </div>
+      <div className="my-4" style={{ borderTop: "1px solid #E5E7EB" }} />
+      <div className="stat-label mb-2">Items</div>
+      <div className="rounded-lg overflow-hidden mb-4" style={{ border: "1px solid #E5E7EB" }}>
+        <table className="w-full" style={{ fontSize: 12 }}>
+          <thead style={{ background: "#F9FAFB" }}>
+            <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+              <th className="py-2 px-3">SKU</th><th className="py-2 px-3">Qty</th>
+              <th className="py-2 px-3">Unit Price</th><th className="py-2 px-3" style={{ textAlign: "right" }}>Line</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lineItems.map((li) => (
+              <tr key={li.key} style={{ borderTop: "1px solid #E5E7EB" }}>
+                <td className="py-2 px-3">{li.sku}</td>
+                <td className="py-2 px-3">{li.qty}</td>
+                <td className="py-2 px-3">{fmtINR(li.unitPrice)}</td>
+                <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 600 }}>{fmtINR(li.total)}</td>
+              </tr>
+            ))}
+            <tr style={{ background: "#F9FAFB", borderTop: "1px solid #E5E7EB" }}>
+              <td className="py-2 px-3" colSpan={3} style={{ fontWeight: 700 }}>Order Total</td>
+              <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 700 }}>{fmtINR(order.value)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="stat-label mb-2">Status Timeline</div>
+      <StageTimeline status={order.status} />
+      <div className="mt-5">
+        <Btn variant="ghost" size="sm" onClick={onClose}>Close</Btn>
+      </div>
+    </RightDrawer>
+  );
+}
+
 export function DealerOrdersAdmin() {
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState("30d");
   const [category, setCategory] = useState("All");
   const [status, setStatus] = useState("All");
   const [page, setPage] = useState(1);
-  const { openAction } = useApp();
+  const [drawerOrder, setDrawerOrder] = useState<RegOrder | null>(null);
+  const { dealerOrdersFilter, setDealerOrdersFilter } = useApp();
 
   const filtered = REGIONAL_ORDERS.filter((o) =>
     (category === "All" || o.category === category) &&
@@ -497,6 +792,14 @@ export function DealerOrdersAdmin() {
   return (
     <div>
       <PageHeader title="Dealer Orders" sub="All orders across the channel" />
+      {dealerOrdersFilter === "dormant" && (
+        <div className="rounded-lg p-3 mb-4 flex items-center justify-between" style={{ background: "#FEF3C7", border: "1px solid #FDE68A" }}>
+          <div style={{ fontSize: 13, color: "#92400E", fontWeight: 600 }}>
+            Showing dormant dealers: no order in 14 days.
+          </div>
+          <button onClick={() => setDealerOrdersFilter(null)} aria-label="Clear filter"><X size={16} color="#92400E" /></button>
+        </div>
+      )}
       <AISuggestions
         items={[
           { text: "Order volume from NCR is +23% above 6-month average — consider bulk dispatch slot.", action: "Plan Dispatch" },
@@ -523,8 +826,7 @@ export function DealerOrdersAdmin() {
             onClick={() => { setStatus(s); setPage(1); }}
             className="px-3 py-1.5 rounded-full"
             style={{
-              fontSize: 12,
-              fontWeight: 600,
+              fontSize: 12, fontWeight: 600,
               background: status === s ? "#0A0A0F" : "#FFFFFF",
               color: status === s ? "#FFFFFF" : "#0A0A0F",
               border: "1px solid #D1D5DB",
@@ -554,38 +856,40 @@ export function DealerOrdersAdmin() {
                 <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(o.value)}</td>
                 <td className="py-3 px-4"><StatusBadge status={o.status} /></td>
                 <td className="py-3 px-4" style={{ color: "#4B5563" }}>{o.date}</td>
-                <td className="py-3 px-4">
-                  <Btn variant="ghost" size="sm" onClick={() => toast.message(`${o.id}`, { description: `${o.dealer} · ${o.skus} · ${fmtINR(o.value)}` })}>View</Btn>
-                </td>
+                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => setDrawerOrder(o)}>View Details</Btn></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+      {drawerOrder && <OrderDetailDrawer order={drawerOrder} onClose={() => setDrawerOrder(null)} />}
     </div>
   );
 }
 
 /* =================== ADMIN/RSM: SECONDARY SALES =================== */
 export function SecondarySales() {
-  const { openAction } = useApp();
+  const { setView, setDealerOrdersFilter } = useApp();
   const max = Math.max(...SKU_SELLTHROUGH.map((s) => s.units));
+  const [sentRows, setSentRows] = useState<Set<number>>(new Set());
+  const [confirmRow, setConfirmRow] = useState<number | null>(null);
+
+  const insightItems = [
+    { text: "Amaron Pro 35Ah trending 23% above forecast in NCR. Consider increasing allocation.", action: "Reallocate", onAction: () => setView("dealer-orders") },
+    { text: "14 dealers in Maharashtra have not logged POS data in 7 days. Follow-up recommended.", action: "View Dormant", onAction: () => { setDealerOrdersFilter("dormant"); setView("dealer-orders"); } },
+    { text: "Powerzone 45Ah stock-out predicted in Tamil Nadu within 12 days at current sell rate.", action: "Alert Dealers", onAction: () => { const el = document.getElementById("stockout-section"); el?.scrollIntoView({ behavior: "smooth" }); } },
+    { text: "AmaronVolt 200Ah pickup is +18% in industrial segment — coordinate with IAM team.", action: "Notify IAM" },
+  ];
+
   return (
     <div>
       <PageHeader title="Secondary Sales Intelligence" sub="POS data, sell-through and predictive stock-out alerts" />
-      <AISuggestions
-        items={[
-          { text: "Amaron Pro 35Ah trending 23% above forecast in NCR. Consider increasing allocation.", action: "Reallocate" },
-          { text: "14 dealers in Maharashtra have not logged POS data in 7 days. Follow-up recommended.", action: "Send Reminder" },
-          { text: "Powerzone 45Ah stock-out predicted in Tamil Nadu within 12 days at current sell rate.", action: "Alert Dealers" },
-          { text: "AmaronVolt 200Ah pickup is +18% in industrial segment — coordinate with IAM team.", action: "Notify IAM" },
-        ]}
-      />
+      <AISuggestions items={insightItems} />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         <StatCard label="POS Entries This Week" value="1,284" change="+11% vs last week" accent="green" />
         <StatCard label="Top Selling SKU" value="Amaron Hi-Life" change="2,120 units" accent="crimson" />
-        <StatCard label="Dormant Dealers (14d)" value="14" change="Follow-up needed" accent="amber" />
+        <StatCard label="Dormant Dealers (14d)" value="14" change="Follow-up needed" accent="amber" onClick={() => { setDealerOrdersFilter("dormant"); setView("dealer-orders"); }} />
         <StatCard label="Stock-out Alerts" value="6" change="Predicted < 14 days" accent="amber" />
       </div>
 
@@ -626,7 +930,7 @@ export function SecondarySales() {
         </div>
       </div>
 
-      <div className="card-base p-0 overflow-x-auto">
+      <div id="stockout-section" className="card-base p-0 overflow-x-auto">
         <div className="px-4 pt-4 stat-label">Stock-out Alerts</div>
         <table className="w-full mt-3" style={{ fontSize: 13 }}>
           <thead>
@@ -645,27 +949,31 @@ export function SecondarySales() {
                 <td className="py-3 px-4"><span className="badge-risk" style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11 }}>{a.days} days</span></td>
                 <td className="py-3 px-4">{a.current}</td>
                 <td className="py-3 px-4" style={{ fontWeight: 600 }}>{a.reorder}</td>
-                <td className="py-3 px-4"><Btn size="sm" onClick={() => openAction({
-                  title: `Alert ${a.dealer}`,
-                  description: `Stock-out predicted in ${a.days} days for ${a.sku}`,
-                  summary: [
-                    { label: "Region", value: a.region },
-                    { label: "Current Stock", value: String(a.current) },
-                    { label: "Recommended Reorder", value: String(a.reorder) + " units" },
-                  ],
-                  fields: [
-                    { type: "select", name: "channel", label: "Send via", options: ["WhatsApp", "Email", "SMS", "All channels"] },
-                    { type: "textarea", name: "msg", label: "Message", defaultValue: `Hi ${a.dealer}, your ${a.sku} stock will run out in ${a.days} days. Recommended reorder: ${a.reorder} units.` },
-                  ],
-                  confirmLabel: "Send Alert",
-                  successTitle: "Alert sent",
-                  successDescription: `${a.dealer} has been notified to reorder ${a.reorder} units of ${a.sku}.`,
-                })}>Alert Dealer</Btn></td>
+                <td className="py-3 px-4">
+                  {sentRows.has(i) ? (
+                    <span className="badge-good" style={{ padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700 }}>Alert Sent</span>
+                  ) : (
+                    <Btn size="sm" onClick={() => setConfirmRow(i)}>Send Alert</Btn>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {confirmRow !== null && (
+        <ConfirmDialog
+          title="Send stock-out alert"
+          body={<>Send stock-out alert to <strong>{STOCKOUT_ALERTS[confirmRow].dealer}</strong> for <strong>{STOCKOUT_ALERTS[confirmRow].sku}</strong>?</>}
+          confirmLabel="Send Alert"
+          onCancel={() => setConfirmRow(null)}
+          onConfirm={() => {
+            setSentRows((prev) => new Set(prev).add(confirmRow));
+            setConfirmRow(null);
+            toast.success("Alert sent");
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -685,10 +993,10 @@ export function AdminDashboard() {
         ]}
       />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        <StatCard label="Dealer Orders (MTD)" value="₹14.82 Cr" change="+8% vs last month" accent="crimson" />
-        <StatCard label="Industrial Revenue (MTD)" value="₹6.41 Cr" change="+12% vs last month" accent="green" />
-        <StatCard label="Critical Sites" value="8" change="Across 3 customers" accent="amber" />
-        <StatCard label="Replacement Pipeline (60d)" value="₹12.4 L" change="14 units · 6 sites" accent="amber" />
+        <StatCard label="Active Dealers" value="312" change="+6 this month" accent="crimson" onClick={() => setView("dealer-orders")} />
+        <StatCard label="Orders Today" value="18" change="+4 vs yesterday" accent="green" onClick={() => setView("dealer-orders")} />
+        <StatCard label="Fleet Sites at Risk" value="8" change="Across 3 customers" accent="amber" onClick={() => setView("fleet-health")} />
+        <StatCard label="Contracts Expiring (60d)" value="3" change="₹2.34 Cr at risk" accent="amber" onClick={() => setView("contracts")} />
       </div>
       <div className="grid lg:grid-cols-2 gap-4 mb-5">
         <div className="card-base" style={{ borderTop: "3px solid #C00000" }}>
@@ -755,22 +1063,163 @@ export function RSMDashboard() {
 }
 
 /* =================== INDUSTRIAL CUSTOMER: MY SITES =================== */
+
+function ServiceRequestModal({ siteName, unitId, onClose }: { siteName: string; unitId: string; onClose: () => void }) {
+  const [type, setType] = useState("Inspection");
+  const [priority, setPriority] = useState("Normal");
+  const [desc, setDesc] = useState("");
+  const [submitted, setSubmitted] = useState<string | null>(null);
+  const { addServiceRequest } = useApp();
+  const inputStyle = { border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF", padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const id = "SR-" + Math.floor(1000 + Math.random() * 9000);
+    addServiceRequest({ id, siteName, unitId, type, priority, description: desc, ts: Date.now() });
+    setSubmitted(id);
+  };
+
+  return (
+    <CenterModal widthClass="max-w-md">
+      <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700 }}>Raise Service Request</h3>
+        <button onClick={onClose}><X size={18} /></button>
+      </div>
+      <div className="p-5">
+        {submitted ? (
+          <div className="text-center py-3">
+            <CheckCircle2 size={48} color="#15803D" style={{ margin: "0 auto" }} />
+            <div style={{ fontSize: 15, fontWeight: 700, marginTop: 12 }}>
+              Service Request {submitted} submitted successfully.
+            </div>
+            <div style={{ fontSize: 13, color: "#4B5563", marginTop: 8 }}>
+              Our team will contact you within 24 hours.
+            </div>
+            <div className="mt-5">
+              <Btn onClick={onClose}>Close</Btn>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-3">
+            <div>
+              <label className="stat-label block mb-1">Site Name</label>
+              <input value={siteName} readOnly style={{ ...inputStyle, background: "#F3F4F6" }} />
+            </div>
+            <div>
+              <label className="stat-label block mb-1">Unit ID</label>
+              <input value={unitId} readOnly style={{ ...inputStyle, background: "#F3F4F6" }} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="stat-label block mb-1">Request Type</label>
+                <select value={type} onChange={(e) => setType(e.target.value)} style={inputStyle}>
+                  <option>Inspection</option><option>Replacement</option><option>Emergency</option>
+                </select>
+              </div>
+              <div>
+                <label className="stat-label block mb-1">Priority</label>
+                <select value={priority} onChange={(e) => setPriority(e.target.value)} style={inputStyle}>
+                  <option>Normal</option><option>High</option><option>Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="stat-label block mb-1">Description</label>
+              <textarea rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} style={inputStyle} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Btn variant="ghost" size="sm" onClick={onClose}>Cancel</Btn>
+              <Btn type="submit">Submit</Btn>
+            </div>
+          </form>
+        )}
+      </div>
+    </CenterModal>
+  );
+}
+
+function UnitsTable({ siteId, onRaise }: { siteId: string; onRaise: (unitId: string) => void }) {
+  const units = SITE_UNITS[siteId] ?? [];
+  return (
+    <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid #E5E7EB" }}>
+      <table className="w-full" style={{ fontSize: 12 }}>
+        <thead style={{ background: "#F9FAFB" }}>
+          <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+            <th className="py-2 px-3">Unit ID</th><th className="py-2 px-3">Model</th>
+            <th className="py-2 px-3">Installed</th><th className="py-2 px-3">Age</th>
+            <th className="py-2 px-3" style={{ minWidth: 140 }}>Life Used</th>
+            <th className="py-2 px-3">Status</th><th className="py-2 px-3"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {units.map((u) => (
+            <tr key={u.unitId} style={{ borderTop: "1px solid #E5E7EB" }}>
+              <td className="py-2 px-3" style={{ fontWeight: 600 }}>{u.unitId}</td>
+              <td className="py-2 px-3">{u.model}</td>
+              <td className="py-2 px-3" style={{ color: "#4B5563" }}>{u.installed}</td>
+              <td className="py-2 px-3">{u.ageMonths} mo</td>
+              <td className="py-2 px-3">
+                <div className="h-2 rounded-full" style={{ background: "#E5E7EB" }}>
+                  <div className="h-full rounded-full"
+                    style={{ width: `${u.lifeUsed}%`, background: u.lifeUsed > 80 ? "#C00000" : u.lifeUsed > 60 ? "#EF9F27" : "#00A651" }} />
+                </div>
+                <div style={{ fontSize: 10, color: "#4B5563", marginTop: 2 }}>{u.lifeUsed}%</div>
+              </td>
+              <td className="py-2 px-3"><StatusBadge status={u.status} /></td>
+              <td className="py-2 px-3"><Btn size="sm" onClick={() => onRaise(u.unitId)}>Raise SR</Btn></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function MySites() {
-  const [openSite, setOpenSite] = useState<string | null>(null);
-  const [srOpen, setSrOpen] = useState(false);
+  const [openSiteId, setOpenSiteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [srUnit, setSrUnit] = useState<{ siteName: string; unitId: string } | null>(null);
   const totalUnits = SITES.reduce((s, x) => s + x.units, 0);
   const atRisk = SITES.filter((s) => s.status === "At Risk").reduce((s, x) => s + x.units, 0);
   const critical = SITES.filter((s) => s.status === "Critical").reduce((s, x) => s + x.units, 0);
 
   const filtered = SITES.filter((s) => statusFilter === "All" || s.status === statusFilter);
 
+  if (openSiteId) {
+    const site = SITES.find((s) => s.id === openSiteId)!;
+    const units = SITE_UNITS[openSiteId] ?? [];
+    const siteCritical = units.filter((u) => u.status === "Critical").length;
+    const siteRisk = units.filter((u) => u.status === "At Risk").length;
+    return (
+      <div>
+        <button onClick={() => setOpenSiteId(null)} className="flex items-center gap-1.5 mb-3" style={{ fontSize: 13, color: "#2B31B8", fontWeight: 600 }}>
+          <ArrowLeft size={14} /> Back to My Sites
+        </button>
+        <PageHeader title={site.name} sub={`${site.id} · ${site.location}`} />
+        <div className="flex items-center gap-3 mb-4">
+          <StatusBadge status={site.status} />
+          <span style={{ fontSize: 13, color: "#4B5563" }}>Last inspection: {site.lastInspection}</span>
+        </div>
+        <div className="grid grid-cols-3 gap-4 mb-5">
+          <StatCard label="Total Units" value={String(units.length)} accent="green" />
+          <StatCard label="At Risk Units" value={String(siteRisk)} accent="amber" />
+          <StatCard label="Critical Units" value={String(siteCritical)} accent="crimson" />
+        </div>
+        <div className="card-base p-4">
+          <div className="stat-label mb-3">Battery Units</div>
+          <UnitsTable siteId={openSiteId} onRaise={(unitId) => setSrUnit({ siteName: site.name, unitId })} />
+        </div>
+        {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader title="My Fleet Overview" sub="Indus Towers — battery health across all sites" />
       <AISuggestions
         items={[
-          { text: "Tower Site NCR-041 has 6 critical units (88% avg life used). Inspection recommended within 14 days.", action: "Raise SR", onAction: () => setSrOpen(true) },
+          { text: "Tower Site NCR-041 has 6 critical units (88% avg life used). Inspection recommended within 14 days.", action: "View Site", onAction: () => setOpenSiteId("NCR-041") },
           { text: "INDT-2024-002 contract has only 20 units left — projected to exhaust 3 weeks before expiry (30 Jun).", action: "Plan Renewal" },
           { text: "MH-117 and KA-052 (8 units) showing degradation patterns — schedule joint inspection.", action: "Schedule" },
         ]}
@@ -831,131 +1280,91 @@ export function MySites() {
               </div>
             </div>
             <div className="mt-4 flex gap-2">
-              <Btn variant="ghost" size="sm" onClick={() => setOpenSite(s.id)}>View Details</Btn>
-              <Btn variant="crimson" size="sm" onClick={() => setSrOpen(true)}>Raise Service Request</Btn>
+              <Btn variant="ghost" size="sm" onClick={() => setOpenSiteId(s.id)}>View Details</Btn>
+              <Btn variant="crimson" size="sm" onClick={() => setSrUnit({ siteName: s.name, unitId: (SITE_UNITS[s.id] ?? [{ unitId: s.id + "-01" }])[0].unitId })}>Raise Service Request</Btn>
             </div>
           </div>
         ))}
       </div>
 
-      {openSite && SITE_UNITS[openSite] && (
-        <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setOpenSite(null)}>
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-white w-full sm:max-w-3xl rounded-t-xl sm:rounded-xl max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()} style={{ border: "1px solid #E5E7EB" }}>
-            <div className="flex justify-between items-center px-5 py-4" style={{ borderBottom: "1px solid #E5E7EB" }}>
-              <div>
-                <h2 style={{ fontSize: 18 }}>{SITES.find((s) => s.id === openSite)?.name}</h2>
-                <div style={{ fontSize: 12, color: "#4B5563" }}>Battery unit detail</div>
-              </div>
-              <button onClick={() => setOpenSite(null)}><X size={18} /></button>
-            </div>
-            <div className="p-5 overflow-x-auto">
-              <table className="w-full" style={{ fontSize: 13 }}>
-                <thead>
-                  <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
-                    <th className="py-2 pr-3">Unit ID</th><th className="py-2 pr-3">Model</th>
-                    <th className="py-2 pr-3">Installed</th><th className="py-2 pr-3">Age</th>
-                    <th className="py-2 pr-3">Life Used</th><th className="py-2 pr-3">Status</th><th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {SITE_UNITS[openSite].map((u) => (
-                    <tr key={u.unitId} style={{ borderTop: "1px solid #E5E7EB" }}>
-                      <td className="py-2.5 pr-3" style={{ fontWeight: 600 }}>{u.unitId}</td>
-                      <td className="py-2.5 pr-3">{u.model}</td>
-                      <td className="py-2.5 pr-3" style={{ color: "#4B5563" }}>{u.installed}</td>
-                      <td className="py-2.5 pr-3">{u.ageMonths} mo</td>
-                      <td className="py-2.5 pr-3" style={{ minWidth: 140 }}>
-                        <div className="h-2 rounded-full" style={{ background: "#E5E7EB" }}>
-                          <div className="h-full rounded-full"
-                            style={{ width: `${u.lifeUsed}%`, background: u.lifeUsed > 80 ? "#C00000" : u.lifeUsed > 60 ? "#EF9F27" : "#00A651" }} />
-                        </div>
-                        <div style={{ fontSize: 11, color: "#4B5563", marginTop: 2 }}>{u.lifeUsed}%</div>
-                      </td>
-                      <td className="py-2.5 pr-3"><StatusBadge status={u.status} /></td>
-                      <td className="py-2.5"><Btn size="sm" onClick={() => setSrOpen(true)}>Raise SR</Btn></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {srOpen && <ServiceRequestModal onClose={() => setSrOpen(false)} />}
-    </div>
-  );
-}
-
-function ServiceRequestModal({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40" />
-      <div className="relative bg-white w-full max-w-md rounded-xl p-5" onClick={(e) => e.stopPropagation()} style={{ border: "1px solid #E5E7EB" }}>
-        <div className="flex justify-between items-center mb-4">
-          <h2 style={{ fontSize: 18 }}>Raise Service Request</h2>
-          <button onClick={onClose}><X size={18} /></button>
-        </div>
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            toast.success("Service request submitted — SR-2026-0143");
-            onClose();
-          }}
-        >
-          <div>
-            <label className="stat-label block mb-1">Site</label>
-            <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF" }}>
-              {SITES.map((s) => <option key={s.id}>{s.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="stat-label block mb-1">Unit ID</label>
-            <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF" }}>
-              <option>U-NCR041-01</option><option>U-NCR041-02</option><option>U-MH117-01</option>
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="stat-label block mb-1">Request Type</label>
-              <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF" }}>
-                <option>Inspection</option><option>Replacement</option><option>Emergency</option>
-              </select>
-            </div>
-            <div>
-              <label className="stat-label block mb-1">Priority</label>
-              <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF" }}>
-                <option>Normal</option><option>High</option><option>Urgent</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="stat-label block mb-1">Description</label>
-            <textarea rows={3} className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "1px solid #D1D5DB", fontSize: 13 }} />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <Btn variant="ghost" size="sm" onClick={onClose}>Cancel</Btn>
-            <Btn type="submit">Submit</Btn>
-          </div>
-        </form>
-      </div>
+      {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
     </div>
   );
 }
 
 /* =================== IAM: FLEET HEALTH =================== */
+
+function ReplacementPipelineModal({ onClose }: { onClose: () => void }) {
+  const rows = Object.entries(SITE_UNITS).flatMap(([siteId, units]) => {
+    const due = units.filter((u) => u.lifeUsed >= 80);
+    if (due.length === 0) return [];
+    const customer = ALL_FLEET_SITES.find((s) => s.site === siteId)?.customer ?? "Indus Towers";
+    const model = due[0].model;
+    const unitPrice = model.includes("AmaronVolt") ? 22000 : model.includes("Quanta 150") ? 17500 : 14200;
+    const date = new Date(Date.now() + (Math.floor(Math.random() * 50) + 10) * 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+    return [{ siteId, customer, model, units: due.length, date, value: due.length * unitPrice }];
+  });
+  const total = rows.reduce((s, r) => s + r.value, 0);
+  return (
+    <CenterModal widthClass="max-w-2xl">
+      <div className="px-5 py-4 flex justify-between items-start" style={{ borderBottom: "1px solid #E5E7EB", background: "#EEF0FF" }}>
+        <div>
+          <h3 style={{ fontSize: 17, fontWeight: 700 }}>60-Day Replacement Pipeline</h3>
+          <div style={{ fontSize: 12, color: "#4B5563", marginTop: 2 }}>Units with ≥80% life used across managed sites.</div>
+        </div>
+        <button onClick={onClose}><X size={18} /></button>
+      </div>
+      <div className="p-5 overflow-y-auto">
+        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid #E5E7EB" }}>
+          <table className="w-full" style={{ fontSize: 12 }}>
+            <thead style={{ background: "#F9FAFB" }}>
+              <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+                <th className="py-2 px-3">Site ID</th><th className="py-2 px-3">Customer</th>
+                <th className="py-2 px-3">Model</th><th className="py-2 px-3">Units Due</th>
+                <th className="py-2 px-3">Est. Date</th><th className="py-2 px-3" style={{ textAlign: "right" }}>Est. Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.siteId} style={{ borderTop: "1px solid #E5E7EB" }}>
+                  <td className="py-2 px-3" style={{ fontWeight: 600 }}>{r.siteId}</td>
+                  <td className="py-2 px-3">{r.customer}</td>
+                  <td className="py-2 px-3">{r.model}</td>
+                  <td className="py-2 px-3">{r.units}</td>
+                  <td className="py-2 px-3">{r.date}</td>
+                  <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 600 }}>{fmtINR(r.value)}</td>
+                </tr>
+              ))}
+              <tr style={{ background: "#F9FAFB", borderTop: "1px solid #E5E7EB" }}>
+                <td className="py-2 px-3" colSpan={5} style={{ fontWeight: 700 }}>Total Pipeline</td>
+                <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 700 }}>{fmtINRLakh(total)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="px-5 py-3 flex justify-end" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+        <Btn variant="ghost" size="sm" onClick={onClose}>Close</Btn>
+      </div>
+    </CenterModal>
+  );
+}
+
 export function IAMFleetHealth() {
   const [search, setSearch] = useState("");
-  const [customer, setCustomer] = useState("All");
   const [page, setPage] = useState(1);
-  const { openAction } = useApp();
+  const [drawerSite, setDrawerSite] = useState<typeof ALL_FLEET_SITES[number] | null>(null);
+  const [srUnit, setSrUnit] = useState<{ siteName: string; unitId: string } | null>(null);
+  const [pipelineOpen, setPipelineOpen] = useState(false);
+  const { selectedCustomer, setSelectedCustomer } = useApp();
 
   const customers = useMemo(() => Array.from(new Set(ALL_FLEET_SITES.map((s) => s.customer))), []);
+  const [customer, setCustomer] = useState("All");
+
+  const effectiveCustomer = selectedCustomer ?? (customer === "All" ? null : customer);
+
   const filtered = ALL_FLEET_SITES.filter((s) =>
-    (customer === "All" || s.customer === customer) &&
+    (effectiveCustomer === null || s.customer === effectiveCustomer) &&
     (search === "" || s.site.toLowerCase().includes(search.toLowerCase()) || s.location.toLowerCase().includes(search.toLowerCase()))
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -970,20 +1379,31 @@ export function IAMFleetHealth() {
       <PageHeader title="Fleet Health" sub="All managed sites across your industrial customers" />
       <AISuggestions
         items={[
-          { text: "14 units across 6 sites are predicted to require replacement within 60 days. Estimated value: ₹12.4 L.", action: "View Pipeline" },
+          { text: "14 units across 6 sites are predicted to require replacement within 60 days. Estimated value: ₹12.4 L.", action: "View Pipeline", onAction: () => setPipelineOpen(true) },
           { text: "Indus Towers NCR-041 and BSNL BSNL-KA-09 are Critical — combined 16 units due in 30 days.", action: "Schedule Visit" },
           { text: "47 units forecast for 90-day replacement (₹38.6 L) — align with procurement cycle.", action: "Sync Procurement" },
         ]}
       />
+      <div className="mb-4">
+        <button onClick={() => setPipelineOpen(true)} className="inline-flex items-center gap-2 px-3 py-2 rounded-md" style={{ background: "#2B31B8", color: "#FFFFFF", fontSize: 13, fontWeight: 600 }}>
+          <Package size={14} /> Replacement Pipeline
+        </button>
+      </div>
+      {selectedCustomer && (
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, fontWeight: 600, color: "#2B31B8" }}>
+          Filtered by: {selectedCustomer}
+          <button onClick={() => setSelectedCustomer(null)} aria-label="Clear filter"><X size={14} /></button>
+        </div>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
         <StatCard label="Total Sites Managed" value={String(total)} change="3 customers" accent="green" />
         <StatCard label="Critical Sites" value={String(critical)} change="Action required" accent="crimson" />
         <StatCard label="At Risk Sites" value={String(risk)} change="Inspect within 30 days" accent="amber" />
-        <StatCard label="Replacement Pipeline" value="₹12.4 L" change="60-day forecast" accent="amber" />
+        <StatCard label="Replacement Pipeline" value="₹12.4 L" change="60-day forecast" accent="amber" onClick={() => setPipelineOpen(true)} />
       </div>
       <FilterBar
         search={search} onSearch={(v) => { setSearch(v); setPage(1); }}
-        category={customer} onCategory={(v) => { setCustomer(v); setPage(1); }}
+        category={selectedCustomer ?? customer} onCategory={(v) => { setSelectedCustomer(null); setCustomer(v); setPage(1); }}
         categories={customers}
       />
       <div className="card-base p-0 overflow-x-auto mb-3">
@@ -1006,35 +1426,49 @@ export function IAMFleetHealth() {
                 <td className="py-3 px-4"><StatusBadge status={s.status} /></td>
                 <td className="py-3 px-4">{s.days}</td>
                 <td className="py-3 px-4"><StatusBadge status={s.risk} /></td>
-                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
-                  title: `${s.site} — ${s.customer}`,
-                  description: `${s.location} · ${s.units} units`,
-                  summary: [
-                    { label: "Status", value: s.status },
-                    { label: "Risk", value: s.risk },
-                    { label: "Days since inspection", value: String(s.days) },
-                  ],
-                  fields: [
-                    { type: "select", name: "type", label: "Action", options: ["Schedule Inspection", "Raise Replacement Order", "Assign Engineer"] },
-                    { type: "date", name: "when", label: "Target date", defaultValue: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10) },
-                    { type: "textarea", name: "notes", label: "Notes" },
-                  ],
-                  confirmLabel: "Confirm",
-                  successTitle: "Action scheduled",
-                })}>View</Btn></td>
+                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => setDrawerSite(s)}>View Details</Btn></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <Pagination page={page} totalPages={totalPages} onPage={setPage} />
+
+      {drawerSite && (
+        <RightDrawer
+          title={`${drawerSite.site} — Battery Units`}
+          sub={`${drawerSite.customer} · ${drawerSite.location}`}
+          onClose={() => setDrawerSite(null)}
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <StatusBadge status={drawerSite.status} />
+            <span style={{ fontSize: 12, color: "#4B5563" }}>Risk: {drawerSite.risk} · Days since inspection: {drawerSite.days}</span>
+          </div>
+          {SITE_UNITS[drawerSite.site] ? (
+            <UnitsTable siteId={drawerSite.site} onRaise={(unitId) => setSrUnit({ siteName: drawerSite.site, unitId })} />
+          ) : (
+            <div className="p-4 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", fontSize: 13, color: "#4B5563" }}>
+              Unit-level data is being sync'd from the field. {drawerSite.units} units installed.
+              <div className="mt-3">
+                <Btn size="sm" onClick={() => setSrUnit({ siteName: drawerSite.site, unitId: drawerSite.site + "-01" })}>Raise Service Request</Btn>
+              </div>
+            </div>
+          )}
+          <div className="mt-5">
+            <Btn variant="ghost" size="sm" onClick={() => setDrawerSite(null)}>Close</Btn>
+          </div>
+        </RightDrawer>
+      )}
+
+      {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
+      {pipelineOpen && <ReplacementPipelineModal onClose={() => setPipelineOpen(false)} />}
     </div>
   );
 }
 
 /* =================== IAM: CUSTOMERS DASHBOARD =================== */
 export function IAMCustomers() {
-  const { setView } = useApp();
+  const { setView, setSelectedCustomer } = useApp();
   return (
     <div>
       <PageHeader title="My Customers" sub="Indus Towers · BSNL · Hitachi UPS Solutions" />
@@ -1067,22 +1501,13 @@ export function IAMCustomers() {
               <StatusBadge status={x.status} />
             </div>
             <div className="grid grid-cols-3 gap-2 mt-4">
-              <div>
-                <div className="stat-label">Sites</div>
-                <div style={{ fontSize: 22, fontWeight: 700 }}>{x.sites}</div>
-              </div>
-              <div>
-                <div className="stat-label">Units</div>
-                <div style={{ fontSize: 22, fontWeight: 700 }}>{x.units}</div>
-              </div>
-              <div>
-                <div className="stat-label">Contracts</div>
-                <div style={{ fontSize: 22, fontWeight: 700 }}>{x.contracts}</div>
-              </div>
+              <div><div className="stat-label">Sites</div><div style={{ fontSize: 22, fontWeight: 700 }}>{x.sites}</div></div>
+              <div><div className="stat-label">Units</div><div style={{ fontSize: 22, fontWeight: 700 }}>{x.units}</div></div>
+              <div><div className="stat-label">Contracts</div><div style={{ fontSize: 22, fontWeight: 700 }}>{x.contracts}</div></div>
             </div>
             <div className="mt-4 flex gap-2">
-              <Btn variant="ghost" size="sm" onClick={() => { setView("fleet-health"); }}>View Sites</Btn>
-              <Btn size="sm" onClick={() => { setView("contracts"); }}>Contracts</Btn>
+              <Btn variant="ghost" size="sm" onClick={() => { setSelectedCustomer(x.c); setView("fleet-health"); }}>View Fleet</Btn>
+              <Btn size="sm" onClick={() => { setSelectedCustomer(x.c); setView("contracts"); }}>View Contracts</Btn>
             </div>
           </div>
         ))}
@@ -1092,9 +1517,27 @@ export function IAMCustomers() {
 }
 
 /* =================== INDUSTRIAL CUSTOMER: MY CONTRACTS =================== */
+
+function sampleReleaseOrdersFor(contractId: string) {
+  // deterministic mock 2-3 ROs per contract
+  const seed = contractId.length;
+  const sites = ["NCR-041", "MH-117", "KA-052", "TN-018", "MH-203"];
+  const statuses = ["Delivered", "Dispatched", "Processing"];
+  const n = (seed % 2) + 2;
+  return Array.from({ length: n }, (_, i) => ({
+    id: `RO-${2026}-${(seed * 31 + i * 17) % 9000 + 1000}`,
+    date: `${10 + i * 6} ${["Jan", "Feb", "Mar", "Apr"][i % 4]} 2026`,
+    qty: 12 + i * 6,
+    site: sites[(seed + i) % sites.length],
+    status: statuses[i % statuses.length],
+    eta: `${15 + i * 6} ${["Jan", "Feb", "Mar", "Apr"][i % 4]} 2026`,
+  }));
+}
+
 export function MyContracts() {
   const mine = CONTRACTS.filter((c) => c.customer === "Indus Towers");
-  const { setView } = useApp();
+  const { setView, setSelectedContractId } = useApp();
+  const [expanded, setExpanded] = useState<string | null>(null);
   const daysToExpiry = (end: string) => {
     const [d, m, y] = end.split(" ");
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(m);
@@ -1106,8 +1549,8 @@ export function MyContracts() {
       <PageHeader title="My Contracts" sub="Active rate contracts with Amara Raja" />
       <AISuggestions
         items={[
-          { text: "INDT-2024-002 will be exhausted 3 weeks before expiry — raise a new contract or emergency order.", action: "Place Order", onAction: () => setView("release-order") },
-          { text: "INDT-2024-001 has 188 units balance with 14 months remaining — well-paced consumption.", action: "View Details" },
+          { text: "INDT-2024-002 will be exhausted 3 weeks before expiry — raise a new contract or emergency order.", action: "Place Order", onAction: () => { setSelectedContractId("INDT-2024-002"); setView("release-order"); } },
+          { text: "INDT-2024-001 has 188 units balance with 14 months remaining — well-paced consumption.", action: "View Details", onAction: () => setExpanded("INDT-2024-001") },
           { text: "INDT-2025-009 utilisation is at 30%. Consider scheduling site rollouts.", action: "Plan Rollout" },
         ]}
       />
@@ -1115,6 +1558,8 @@ export function MyContracts() {
         {mine.map((c) => {
           const days = daysToExpiry(c.end);
           const urgent = days < 60;
+          const isOpen = expanded === c.id;
+          const ros = sampleReleaseOrdersFor(c.id);
           return (
             <div key={c.id} className="card-base" style={{ borderTop: urgent ? "3px solid #EF9F27" : "3px solid #00A651" }}>
               <div className="flex justify-between items-start mb-2">
@@ -1141,9 +1586,39 @@ export function MyContracts() {
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <Btn variant="ghost" size="sm" onClick={() => toast.message(`${c.id} order history`, { description: `${c.consumed} units consumed across multiple sites` })}>View Orders</Btn>
-                <Btn size="sm" onClick={() => setView("release-order")}>Place Release Order</Btn>
+                <Btn variant="ghost" size="sm" onClick={() => setExpanded(isOpen ? null : c.id)}>
+                  {isOpen ? <>Hide Orders <ChevronUp size={12} style={{ display: "inline", marginLeft: 4 }} /></> : <>View Orders <ChevronDown size={12} style={{ display: "inline", marginLeft: 4 }} /></>}
+                </Btn>
+                <Btn size="sm" onClick={() => { setSelectedContractId(c.id); setView("release-order"); }}>Place Release Order</Btn>
               </div>
+              {isOpen && (
+                <div className="mt-4 pt-3" style={{ borderTop: "1px solid #E5E7EB" }}>
+                  <div className="stat-label mb-2">Release Orders</div>
+                  <div className="overflow-x-auto rounded" style={{ border: "1px solid #E5E7EB" }}>
+                    <table className="w-full" style={{ fontSize: 12 }}>
+                      <thead style={{ background: "#F9FAFB" }}>
+                        <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+                          <th className="py-2 px-3">Order ID</th><th className="py-2 px-3">Date</th>
+                          <th className="py-2 px-3">Qty</th><th className="py-2 px-3">Site</th>
+                          <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ros.map((r) => (
+                          <tr key={r.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                            <td className="py-2 px-3" style={{ fontWeight: 600 }}>{r.id}</td>
+                            <td className="py-2 px-3">{r.date}</td>
+                            <td className="py-2 px-3">{r.qty}</td>
+                            <td className="py-2 px-3">{r.site}</td>
+                            <td className="py-2 px-3"><StatusBadge status={r.status} /></td>
+                            <td className="py-2 px-3">{r.eta}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -1155,12 +1630,21 @@ export function MyContracts() {
 /* =================== INDUSTRIAL CUSTOMER: PLACE RELEASE ORDER =================== */
 export function PlaceReleaseOrder() {
   const mine = CONTRACTS.filter((c) => c.customer === "Indus Towers");
-  const [contractId, setContractId] = useState(mine[0].id);
+  const { setView, selectedContractId, setSelectedContractId, addReleaseOrder } = useApp();
+  const initialId = selectedContractId && mine.find((c) => c.id === selectedContractId) ? selectedContractId : mine[0].id;
+  const [contractId, setContractId] = useState(initialId);
   const [qty, setQty] = useState(10);
   const [site, setSite] = useState(SITES[0].id);
   const [date, setDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
-  const [confirmed, setConfirmed] = useState<{ ro: string; eta: string } | null>(null);
-  const { setView } = useApp();
+  const [confirming, setConfirming] = useState(false);
+  const [confirmed, setConfirmed] = useState<{ ro: string; eta: string; remaining: number } | null>(null);
+
+  useEffect(() => {
+    // Clear selectedContractId once consumed
+    if (selectedContractId) setSelectedContractId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const contract = mine.find((c) => c.id === contractId)!;
   const overage = qty > contract.remaining;
   const inputStyle = { border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF", padding: "8px 10px", borderRadius: 6 } as const;
@@ -1171,37 +1655,16 @@ export function PlaceReleaseOrder() {
         <PageHeader title="Release Order Confirmed" sub="Your contract release order has been recorded" />
         <div className="card-base max-w-2xl mx-auto text-center py-8">
           <div className="inline-flex items-center justify-center" style={{ width: 64, height: 64, borderRadius: "50%", background: "#DCFCE7" }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="3"><path d="M5 12l5 5 9-9" /></svg>
+            <CheckCircle2 size={36} color="#15803D" />
           </div>
-          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 16 }}>Order placed successfully</div>
-          <div style={{ fontSize: 14, color: "#4B5563", marginTop: 6 }}>
-            Reference Release Order ID
+          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 16 }}>Release Order {confirmed.ro} Confirmed</div>
+          <div style={{ fontSize: 14, color: "#4B5563", marginTop: 8 }}>
+            Expected Delivery: <strong style={{ color: "#0A0A0F" }}>{confirmed.eta}</strong>
           </div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: "#5B5BF5", marginTop: 6 }}>{confirmed.ro}</div>
-          <div className="grid grid-cols-2 gap-3 mt-6 text-left max-w-md mx-auto">
-            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-              <div className="stat-label">Contract</div>
-              <div style={{ fontWeight: 600 }}>{contract.id}</div>
-            </div>
-            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-              <div className="stat-label">Product</div>
-              <div style={{ fontWeight: 600 }}>{contract.product}</div>
-            </div>
-            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-              <div className="stat-label">Quantity</div>
-              <div style={{ fontWeight: 600 }}>{qty} units</div>
-            </div>
-            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-              <div className="stat-label">Order Total</div>
-              <div style={{ fontWeight: 600 }}>{fmtINRLakh(qty * contract.rate)}</div>
-            </div>
-            <div className="p-3 rounded col-span-2" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7" }}>
-              <div className="stat-label">Expected Delivery</div>
-              <div style={{ fontWeight: 700, color: "#2B31B8" }}>{confirmed.eta}</div>
-            </div>
+          <div style={{ fontSize: 13, color: "#4B5563", marginTop: 4 }}>
+            Contract remaining balance: <strong style={{ color: "#0A0A0F" }}>{confirmed.remaining} units</strong>
           </div>
-          <div className="flex gap-2 justify-center mt-6">
-            <Btn variant="ghost" onClick={() => setConfirmed(null)}>Place Another</Btn>
+          <div className="mt-6">
             <Btn onClick={() => setView("contracts")}>Back to My Contracts</Btn>
           </div>
         </div>
@@ -1209,8 +1672,14 @@ export function PlaceReleaseOrder() {
     );
   }
 
+  const total = qty * contract.rate;
+  const etaDate = new Date(new Date(date).getTime() + 3 * 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
   return (
     <div>
+      <button onClick={() => setView("contracts")} className="flex items-center gap-1.5 mb-3" style={{ fontSize: 13, color: "#2B31B8", fontWeight: 600 }}>
+        <ArrowLeft size={14} /> Back to My Contracts
+      </button>
       <PageHeader title="Place Release Order" sub="Order against an active rate contract" />
       <AISuggestions
         items={[
@@ -1221,19 +1690,23 @@ export function PlaceReleaseOrder() {
       <div className="grid lg:grid-cols-3 gap-4">
         <form
           className="card-base lg:col-span-2 space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (overage) return;
-            const ro = "RO-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000);
-            const etaDate = new Date(new Date(date).getTime() + 2 * 86400000);
-            setConfirmed({ ro, eta: etaDate.toDateString() });
-          }}
+          onSubmit={(e) => { e.preventDefault(); if (!overage) setConfirming(true); }}
         >
           <div>
             <label className="stat-label block mb-1">Contract</label>
             <select value={contractId} onChange={(e) => setContractId(e.target.value)} className="w-full" style={inputStyle}>
               {mine.map((c) => <option key={c.id} value={c.id}>{c.id} — {c.product}</option>)}
             </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="stat-label block mb-1">Product</label>
+              <input value={contract.product} readOnly className="w-full" style={{ ...inputStyle, background: "#F3F4F6" }} />
+            </div>
+            <div>
+              <label className="stat-label block mb-1">Agreed Rate</label>
+              <input value={`${fmtINR(contract.rate)} / unit`} readOnly className="w-full" style={{ ...inputStyle, background: "#F3F4F6" }} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1248,17 +1721,13 @@ export function PlaceReleaseOrder() {
             </div>
           </div>
           <div>
-            <label className="stat-label block mb-1">Product</label>
-            <input value={contract.product} disabled className="w-full" style={{ ...inputStyle, background: "#F3F4F6" }} />
-          </div>
-          <div>
             <label className="stat-label block mb-1">Quantity</label>
             <input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} className="w-full" style={inputStyle} />
-            {overage && (
-              <div style={{ fontSize: 12, color: "#C00000", marginTop: 4, fontWeight: 600 }}>
-                Quantity exceeds contract balance ({contract.remaining} units remaining).
-              </div>
-            )}
+            <div style={{ fontSize: 12, color: overage ? "#C00000" : "#4B5563", marginTop: 4, fontWeight: 600 }}>
+              {overage
+                ? `Quantity exceeds available contract balance of ${contract.remaining} units`
+                : `Available: ${contract.remaining} units.`}
+            </div>
           </div>
           <div>
             <label className="stat-label block mb-1">Special Instructions</label>
@@ -1275,22 +1744,129 @@ export function PlaceReleaseOrder() {
             <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Rate</span><span>{fmtINR(contract.rate)}/unit</span></div>
             <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Quantity</span><span>{qty}</span></div>
             <div className="flex justify-between pt-3" style={{ borderTop: "1px solid #E5E7EB", fontSize: 16, fontWeight: 700 }}>
-              <span>Order Total</span><span>{fmtINRLakh(qty * contract.rate)}</span>
+              <span>Order Total</span><span>{fmtINRLakh(total)}</span>
             </div>
-            <div className="flex justify-between" style={{ color: "#4B5563", fontSize: 13 }}><span>Balance after</span><span>{contract.remaining - qty} units</span></div>
+            <div className="flex justify-between" style={{ color: "#4B5563", fontSize: 13 }}>
+              <span>Balance after</span><span>{contract.remaining - qty} units</span>
+            </div>
           </div>
         </div>
       </div>
+
+      {confirming && (
+        <ConfirmDialog
+          title="Confirm Release Order"
+          confirmLabel="Confirm"
+          body={
+            <div className="space-y-1.5" style={{ fontSize: 13 }}>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Contract ID</span><span style={{ fontWeight: 600 }}>{contract.id}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{contract.product}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Quantity</span><span style={{ fontWeight: 600 }}>{qty} units</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery Site</span><span style={{ fontWeight: 600 }}>{SITES.find((s) => s.id === site)?.name}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Requested Date</span><span style={{ fontWeight: 600 }}>{date}</span></div>
+              <div className="flex justify-between pt-2 mt-1" style={{ borderTop: "1px solid #E5E7EB", fontWeight: 700 }}>
+                <span>Total Value</span><span>{fmtINRLakh(total)}</span>
+              </div>
+            </div>
+          }
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            const ro = "RO-" + Math.floor(1000 + Math.random() * 9000);
+            addReleaseOrder({ id: ro, contractId: contract.id, qty, site, date, eta: etaDate, total });
+            setConfirming(false);
+            setConfirmed({ ro, eta: etaDate, remaining: contract.remaining - qty });
+          }}
+        />
+      )}
     </div>
   );
 }
 
 /* =================== IAM/ADMIN: ALL CONTRACTS =================== */
+
+function ContractDetailDrawer({ contractId, onClose }: { contractId: string; onClose: () => void }) {
+  const c = CONTRACTS.find((x) => x.id === contractId)!;
+  const [d, m, y] = c.end.split(" ");
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(m);
+  const days = Math.round((new Date(Number(y), months, Number(d)).getTime() - Date.now()) / 86400000);
+  const utilisation = Math.round((c.consumed / c.total) * 100);
+  const ros = sampleReleaseOrdersFor(c.id);
+  const dayColor = days < 30 ? "#C00000" : days < 60 ? "#EF9F27" : "#15803D";
+
+  return (
+    <RightDrawer title="Contract Details" sub={c.id} onClose={onClose}>
+      <div className="space-y-1.5 mb-4" style={{ fontSize: 13 }}>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Contract ID</span><span style={{ fontWeight: 700 }}>{c.id}</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Customer</span><span style={{ fontWeight: 600 }}>{c.customer}</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{c.product}</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Agreed Rate</span><span>{fmtINR(c.rate)} / unit</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Total Quantity</span><span>{c.total} units</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Consumed</span><span>{c.consumed} units</span></div>
+        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Remaining</span><span style={{ fontWeight: 700 }}>{c.remaining} units</span></div>
+      </div>
+      <div className="mb-4">
+        <div className="flex justify-between mb-1.5" style={{ fontSize: 11, color: "#4B5563", fontWeight: 600 }}>
+          <span>UTILISATION</span><span>{utilisation}%</span>
+        </div>
+        <div className="h-2 rounded-full" style={{ background: "#E5E7EB" }}>
+          <div className="h-full rounded-full" style={{ width: `${utilisation}%`, background: utilisation > 80 ? "#EF9F27" : "#00A651" }} />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mb-4" style={{ fontSize: 12 }}>
+        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+          <div className="stat-label">Start</div><div style={{ fontWeight: 600 }}>{c.start}</div>
+        </div>
+        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+          <div className="stat-label">End</div><div style={{ fontWeight: 600 }}>{c.end}</div>
+        </div>
+        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+          <div className="stat-label">Days to Expiry</div><div style={{ fontWeight: 700, color: dayColor }}>{days}d</div>
+        </div>
+      </div>
+      {days < 60 && (
+        <div className="rounded p-3 mb-4" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, color: "#2B31B8" }}>
+          Cogniq: Contract expires in {days} days at current consumption pace. Consider initiating renewal.
+        </div>
+      )}
+      <div className="stat-label mb-2">Release Orders Under This Contract</div>
+      <div className="overflow-x-auto rounded" style={{ border: "1px solid #E5E7EB" }}>
+        <table className="w-full" style={{ fontSize: 12 }}>
+          <thead style={{ background: "#F9FAFB" }}>
+            <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+              <th className="py-2 px-3">Order ID</th><th className="py-2 px-3">Date</th>
+              <th className="py-2 px-3">Qty</th><th className="py-2 px-3">Site</th>
+              <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ros.map((r) => (
+              <tr key={r.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                <td className="py-2 px-3" style={{ fontWeight: 600 }}>{r.id}</td>
+                <td className="py-2 px-3">{r.date}</td>
+                <td className="py-2 px-3">{r.qty}</td>
+                <td className="py-2 px-3">{r.site}</td>
+                <td className="py-2 px-3"><StatusBadge status={r.status} /></td>
+                <td className="py-2 px-3">{r.eta}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-5">
+        <Btn variant="ghost" size="sm" onClick={onClose}>Close</Btn>
+      </div>
+    </RightDrawer>
+  );
+}
+
 export function AllContracts() {
   const [search, setSearch] = useState("");
+  const [drawerId, setDrawerId] = useState<string | null>(null);
+  const { selectedCustomer, setSelectedCustomer } = useApp();
   const [customer, setCustomer] = useState("All");
-  const { openAction } = useApp();
   const customers = useMemo(() => Array.from(new Set(CONTRACTS.map((c) => c.customer))), []);
+
+  const effectiveCustomer = selectedCustomer ?? (customer === "All" ? null : customer);
 
   const daysToExpiry = (end: string) => {
     const [d, m, y] = end.split(" ");
@@ -1299,7 +1875,7 @@ export function AllContracts() {
   };
 
   const filtered = CONTRACTS.filter((c) =>
-    (customer === "All" || c.customer === customer) &&
+    (effectiveCustomer === null || c.customer === effectiveCustomer) &&
     (search === "" || c.id.toLowerCase().includes(search.toLowerCase()) || c.product.toLowerCase().includes(search.toLowerCase()))
   );
 
@@ -1313,9 +1889,15 @@ export function AllContracts() {
           { text: "BSNL contracts are 51% utilised — schedule mid-term review meeting.", action: "Schedule" },
         ]}
       />
+      {selectedCustomer && (
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, fontWeight: 600, color: "#2B31B8" }}>
+          Filtered by: {selectedCustomer}
+          <button onClick={() => setSelectedCustomer(null)} aria-label="Clear filter"><X size={14} /></button>
+        </div>
+      )}
       <FilterBar
         search={search} onSearch={setSearch}
-        category={customer} onCategory={setCustomer}
+        category={selectedCustomer ?? customer} onCategory={(v) => { setSelectedCustomer(null); setCustomer(v); }}
         categories={customers}
       />
       <div className="card-base p-0 overflow-x-auto">
@@ -1341,29 +1923,14 @@ export function AllContracts() {
                   <td className="py-3 px-4">{c.consumed}</td>
                   <td className="py-3 px-4" style={{ fontWeight: 600 }}>{c.remaining}</td>
                   <td className="py-3 px-4" style={{ color, fontWeight: 600 }}>{c.end} ({days}d)</td>
-                  <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
-                    title: `Manage ${c.id}`,
-                    description: `${c.customer} · ${c.product}`,
-                    summary: [
-                      { label: "Total", value: String(c.total) },
-                      { label: "Consumed", value: String(c.consumed) },
-                      { label: "Remaining", value: String(c.remaining) },
-                      { label: "Rate", value: fmtINR(c.rate) + "/unit" },
-                      { label: "Expiry", value: c.end },
-                    ],
-                    fields: [
-                      { type: "select", name: "act", label: "Action", options: ["Draft Renewal", "Schedule Review", "Adjust Quantity", "Flag for Audit"] },
-                      { type: "textarea", name: "comment", label: "Comment" },
-                    ],
-                    confirmLabel: "Submit",
-                    successTitle: "Contract action recorded",
-                  })}>Manage</Btn></td>
+                  <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => setDrawerId(c.id)}>View Details</Btn></td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+      {drawerId && <ContractDetailDrawer contractId={drawerId} onClose={() => setDrawerId(null)} />}
     </div>
   );
 }
