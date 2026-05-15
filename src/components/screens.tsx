@@ -1203,10 +1203,15 @@ export function DealerOrdersAdmin() {
 
 /* =================== ADMIN/RSM: SECONDARY SALES =================== */
 export function SecondarySales() {
-  const { setView, setDealerOrdersFilter } = useApp();
+  const { setView, setDealerOrdersFilter, addOrder, addNotification } = useApp();
   const max = Math.max(...SKU_SELLTHROUGH.map((s) => s.units));
   const [sentRows, setSentRows] = useState<Set<number>>(new Set());
   const [confirmRow, setConfirmRow] = useState<number | null>(null);
+  const [skuDetail, setSkuDetail] = useState<string | null>(null);
+  const [regionDetail, setRegionDetail] = useState<string | null>(null);
+  const [orderForRow, setOrderForRow] = useState<number | null>(null);
+  const [orderQty, setOrderQty] = useState<number>(0);
+  const [orderDate, setOrderDate] = useState<string>("");
 
   const insightItems = [
     { text: "Amaron Pro 35Ah trending 23% above forecast in NCR. Consider increasing allocation.", action: "Reallocate", onAction: () => setView("dealer-orders") },
