@@ -295,7 +295,7 @@ export function MyOrders() {
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState("30d");
   const [page, setPage] = useState(1);
-
+  const { openAction } = useApp();
   const filtered = DEALER_ORDERS.filter((o) =>
     o.id.toLowerCase().includes(search.toLowerCase()) ||
     o.items.toLowerCase().includes(search.toLowerCase())
@@ -332,7 +332,25 @@ export function MyOrders() {
                 <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(o.total)}</td>
                 <td className="py-3 px-4"><StatusBadge status={o.status} /></td>
                 <td className="py-3 px-4" style={{ color: "#4B5563" }}>{o.eta}</td>
-                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => toast.message(`Tracking ${o.id}`, { description: `Status: ${o.status} · ETA ${o.eta}` })}>Track</Btn></td>
+                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
+                  title: `Track Order ${o.id}`,
+                  description: `Live status for your order.`,
+                  summary: [
+                    { label: "Order ID", value: o.id },
+                    { label: "Items", value: o.items },
+                    { label: "Total", value: fmtINR(o.total) },
+                    { label: "Status", value: o.status },
+                    { label: "ETA", value: o.eta },
+                    { label: "Carrier", value: "Amara Logistics · AWB-" + o.id.slice(-4) + "21" },
+                  ],
+                  fields: [
+                    { type: "select", name: "support", label: "Need help?", options: ["No issue — just tracking", "Delivery delay", "Wrong items expected", "Reschedule delivery"] },
+                    { type: "textarea", name: "notes", label: "Message to dispatch (optional)" },
+                  ],
+                  confirmLabel: "Notify Dispatch",
+                  successTitle: "Dispatch notified",
+                  successDescription: "Our logistics team will respond within 2 working hours.",
+                })}>Track</Btn></td>
               </tr>
             ))}
           </tbody>
@@ -466,6 +484,7 @@ export function DealerOrdersAdmin() {
   const [category, setCategory] = useState("All");
   const [status, setStatus] = useState("All");
   const [page, setPage] = useState(1);
+  const { openAction } = useApp();
 
   const filtered = REGIONAL_ORDERS.filter((o) =>
     (category === "All" || o.category === category) &&
@@ -550,6 +569,7 @@ export function DealerOrdersAdmin() {
 
 /* =================== ADMIN/RSM: SECONDARY SALES =================== */
 export function SecondarySales() {
+  const { openAction } = useApp();
   const max = Math.max(...SKU_SELLTHROUGH.map((s) => s.units));
   return (
     <div>
@@ -625,7 +645,22 @@ export function SecondarySales() {
                 <td className="py-3 px-4"><span className="badge-risk" style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11 }}>{a.days} days</span></td>
                 <td className="py-3 px-4">{a.current}</td>
                 <td className="py-3 px-4" style={{ fontWeight: 600 }}>{a.reorder}</td>
-                <td className="py-3 px-4"><Btn size="sm" onClick={() => toast.success(`Alert sent to ${a.dealer}`)}>Alert Dealer</Btn></td>
+                <td className="py-3 px-4"><Btn size="sm" onClick={() => openAction({
+                  title: `Alert ${a.dealer}`,
+                  description: `Stock-out predicted in ${a.days} days for ${a.sku}`,
+                  summary: [
+                    { label: "Region", value: a.region },
+                    { label: "Current Stock", value: String(a.current) },
+                    { label: "Recommended Reorder", value: String(a.reorder) + " units" },
+                  ],
+                  fields: [
+                    { type: "select", name: "channel", label: "Send via", options: ["WhatsApp", "Email", "SMS", "All channels"] },
+                    { type: "textarea", name: "msg", label: "Message", defaultValue: `Hi ${a.dealer}, your ${a.sku} stock will run out in ${a.days} days. Recommended reorder: ${a.reorder} units.` },
+                  ],
+                  confirmLabel: "Send Alert",
+                  successTitle: "Alert sent",
+                  successDescription: `${a.dealer} has been notified to reorder ${a.reorder} units of ${a.sku}.`,
+                })}>Alert Dealer</Btn></td>
               </tr>
             ))}
           </tbody>
@@ -916,6 +951,7 @@ export function IAMFleetHealth() {
   const [search, setSearch] = useState("");
   const [customer, setCustomer] = useState("All");
   const [page, setPage] = useState(1);
+  const { openAction } = useApp();
 
   const customers = useMemo(() => Array.from(new Set(ALL_FLEET_SITES.map((s) => s.customer))), []);
   const filtered = ALL_FLEET_SITES.filter((s) =>
@@ -970,7 +1006,22 @@ export function IAMFleetHealth() {
                 <td className="py-3 px-4"><StatusBadge status={s.status} /></td>
                 <td className="py-3 px-4">{s.days}</td>
                 <td className="py-3 px-4"><StatusBadge status={s.risk} /></td>
-                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => toast.message(`${s.site}`, { description: `${s.customer} · ${s.units} units · ${s.status}` })}>View</Btn></td>
+                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
+                  title: `${s.site} — ${s.customer}`,
+                  description: `${s.location} · ${s.units} units`,
+                  summary: [
+                    { label: "Status", value: s.status },
+                    { label: "Risk", value: s.risk },
+                    { label: "Days since inspection", value: String(s.days) },
+                  ],
+                  fields: [
+                    { type: "select", name: "type", label: "Action", options: ["Schedule Inspection", "Raise Replacement Order", "Assign Engineer"] },
+                    { type: "date", name: "when", label: "Target date", defaultValue: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10) },
+                    { type: "textarea", name: "notes", label: "Notes" },
+                  ],
+                  confirmLabel: "Confirm",
+                  successTitle: "Action scheduled",
+                })}>View</Btn></td>
               </tr>
             ))}
           </tbody>
@@ -1108,17 +1159,63 @@ export function PlaceReleaseOrder() {
   const [qty, setQty] = useState(10);
   const [site, setSite] = useState(SITES[0].id);
   const [date, setDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
+  const [confirmed, setConfirmed] = useState<{ ro: string; eta: string } | null>(null);
+  const { setView } = useApp();
   const contract = mine.find((c) => c.id === contractId)!;
   const overage = qty > contract.remaining;
   const inputStyle = { border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF", padding: "8px 10px", borderRadius: 6 } as const;
+
+  if (confirmed) {
+    return (
+      <div>
+        <PageHeader title="Release Order Confirmed" sub="Your contract release order has been recorded" />
+        <div className="card-base max-w-2xl mx-auto text-center py-8">
+          <div className="inline-flex items-center justify-center" style={{ width: 64, height: 64, borderRadius: "50%", background: "#DCFCE7" }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="3"><path d="M5 12l5 5 9-9" /></svg>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 16 }}>Order placed successfully</div>
+          <div style={{ fontSize: 14, color: "#4B5563", marginTop: 6 }}>
+            Reference Release Order ID
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#5B5BF5", marginTop: 6 }}>{confirmed.ro}</div>
+          <div className="grid grid-cols-2 gap-3 mt-6 text-left max-w-md mx-auto">
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div className="stat-label">Contract</div>
+              <div style={{ fontWeight: 600 }}>{contract.id}</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div className="stat-label">Product</div>
+              <div style={{ fontWeight: 600 }}>{contract.product}</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div className="stat-label">Quantity</div>
+              <div style={{ fontWeight: 600 }}>{qty} units</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div className="stat-label">Order Total</div>
+              <div style={{ fontWeight: 600 }}>{fmtINRLakh(qty * contract.rate)}</div>
+            </div>
+            <div className="p-3 rounded col-span-2" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7" }}>
+              <div className="stat-label">Expected Delivery</div>
+              <div style={{ fontWeight: 700, color: "#2B31B8" }}>{confirmed.eta}</div>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-center mt-6">
+            <Btn variant="ghost" onClick={() => setConfirmed(null)}>Place Another</Btn>
+            <Btn onClick={() => setView("contracts")}>Back to My Contracts</Btn>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <PageHeader title="Place Release Order" sub="Order against an active rate contract" />
       <AISuggestions
         items={[
-          { text: "Contract INDT-2024-002 has only 20 units left — consider topping up from INDT-2025-009.", action: "Switch Contract" },
-          { text: "Tower Site NCR-041 has 6 critical units — prioritize this delivery site.", action: "Set Site" },
+          { text: "Contract INDT-2024-002 has only 20 units left — consider topping up from INDT-2025-009.", action: "Switch Contract", onAction: () => setContractId("INDT-2025-009") },
+          { text: "Tower Site NCR-041 has 6 critical units — prioritize this delivery site.", action: "Set Site", onAction: () => setSite("NCR-041") },
         ]}
       />
       <div className="grid lg:grid-cols-3 gap-4">
@@ -1126,7 +1223,10 @@ export function PlaceReleaseOrder() {
           className="card-base lg:col-span-2 space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!overage) toast.success(`Release order placed — ${qty} × ${contract.product}`);
+            if (overage) return;
+            const ro = "RO-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000);
+            const etaDate = new Date(new Date(date).getTime() + 2 * 86400000);
+            setConfirmed({ ro, eta: etaDate.toDateString() });
           }}
         >
           <div>
@@ -1189,6 +1289,7 @@ export function PlaceReleaseOrder() {
 export function AllContracts() {
   const [search, setSearch] = useState("");
   const [customer, setCustomer] = useState("All");
+  const { openAction } = useApp();
   const customers = useMemo(() => Array.from(new Set(CONTRACTS.map((c) => c.customer))), []);
 
   const daysToExpiry = (end: string) => {
@@ -1240,7 +1341,23 @@ export function AllContracts() {
                   <td className="py-3 px-4">{c.consumed}</td>
                   <td className="py-3 px-4" style={{ fontWeight: 600 }}>{c.remaining}</td>
                   <td className="py-3 px-4" style={{ color, fontWeight: 600 }}>{c.end} ({days}d)</td>
-                  <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => toast.message(`${c.id}`, { description: `${c.customer} · ${c.product} · ${c.remaining} units left` })}>Manage</Btn></td>
+                  <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
+                    title: `Manage ${c.id}`,
+                    description: `${c.customer} · ${c.product}`,
+                    summary: [
+                      { label: "Total", value: String(c.total) },
+                      { label: "Consumed", value: String(c.consumed) },
+                      { label: "Remaining", value: String(c.remaining) },
+                      { label: "Rate", value: fmtINR(c.rate) + "/unit" },
+                      { label: "Expiry", value: c.end },
+                    ],
+                    fields: [
+                      { type: "select", name: "act", label: "Action", options: ["Draft Renewal", "Schedule Review", "Adjust Quantity", "Flag for Audit"] },
+                      { type: "textarea", name: "comment", label: "Comment" },
+                    ],
+                    confirmLabel: "Submit",
+                    successTitle: "Contract action recorded",
+                  })}>Manage</Btn></td>
                 </tr>
               );
             })}
