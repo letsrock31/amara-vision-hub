@@ -56,24 +56,21 @@
 
 @layer components {
   .card-base {
-    background: linear-gradient(180deg, #1A1A23 0%, #141419 100%);
-    border: 0.5px solid #26262F;
+    background: #FFFFFF;
+    border: 1px solid #E5E7EB;
     border-radius: 10px;
     padding: 16px;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px -16px rgba(0,0,0,0.6);
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -18px rgba(15,23,42,0.12);
   }
-  .stat-label { font-size: 9px; text-transform: uppercase; color: #666666; letter-spacing: 0.06em; }
-  .stat-value { font-size: 22px; color: #FFFFFF; font-weight: 500; letter-spacing: -0.02em; }
+  .stat-label { font-size: 9px; text-transform: uppercase; color: #6B7280; letter-spacing: 0.06em; font-weight: 500; }
+  .stat-value { font-size: 22px; color: #0A0A0F; font-weight: 600; letter-spacing: -0.02em; }
   .stat-change { font-size: 9px; }
-  .badge-critical { background: #2E0D0D; color: #FF5C5C; }
-  .badge-risk { background: #2E1E00; color: #EF9F27; }
-  .badge-good { background: #1B2410; color: #B8E94A; }
-  .nav-active {
-    border-left: 2px solid #C00000;
-    background: #1A1A23;
-    color: #C00000;
-  }
-  table tr:hover { background: #1E1E27; }
-  input::placeholder, textarea::placeholder { color: #555555; }
-  input:focus, textarea:focus, select:focus { border-color: #5B5BF5 !important; box-shadow: 0 0 0 3px rgba(91,91,245,0.15) !important; }
+  .badge-critical { background: #FEE2E2; color: #B91C1C; }
+  .badge-risk { background: #FEF3C7; color: #B45309; }
+  .badge-good { background: #DCFCE7; color: #15803D; }
+  .nav-active { border-left: 2px solid #C6F24E; background: rgba(255,255,255,0.12); color: #FFFFFF; }
+  table { color: #0A0A0F; }
+  table tr:hover { background: #F9FAFB; }
+  input::placeholder, textarea::placeholder { color: #9CA3AF; }
+  input:focus, textarea:focus, select:focus { border-color: #3D44E0 !important; box-shadow: 0 0 0 3px rgba(61,68,224,0.15) !important; }
 }
