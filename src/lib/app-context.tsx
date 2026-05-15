@@ -10,7 +10,8 @@ interface AppCtx {
   view: View;
   setView: (v: View) => void;
   cart: CartItem[];
-  setCart: (cart: CartItem[]) => void;
+  setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
+  addToCart: (item: CartItem) => void;
 }
 
 const Ctx = createContext<AppCtx | null>(null);
@@ -37,7 +38,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  return <Ctx.Provider value={{ profile, setProfile, view, setView, cart, setCart }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ profile, setProfile, view, setView, cart, setCart, addToCart }}>{children}</Ctx.Provider>;
 }
 
 export const useApp = () => {
