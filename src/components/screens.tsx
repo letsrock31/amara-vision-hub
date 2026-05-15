@@ -1320,6 +1320,45 @@ export function SecondarySales() {
           }}
         />
       )}
+      {skuDetail && <SkuDetailModal sku={skuDetail} onClose={() => setSkuDetail(null)} />}
+      {regionDetail && <RegionDetailModal region={regionDetail} onClose={() => setRegionDetail(null)} />}
+      {orderForRow !== null && (() => {
+        const a = STOCKOUT_ALERTS[orderForRow];
+        const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
+        return (
+          <CenterModal widthClass="max-w-md">
+            <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Create Order for {a.dealer}</h3>
+              <button onClick={() => setOrderForRow(null)}><X size={18} /></button>
+            </div>
+            <form
+              className="p-5 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+                const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                addOrder({
+                  id, date: today, items: `${a.sku} ×${orderQty}`, total: 0,
+                  status: "Processing", eta: orderDate || today,
+                  dealer: a.dealer, location: a.region,
+                });
+                addNotification("Order " + id + " created on behalf of " + a.dealer);
+                setOrderForRow(null);
+                toast.success("Order " + id + " created");
+              }}
+            >
+              <div><label className="stat-label block mb-1">Dealer</label><input readOnly value={a.dealer} style={{ ...inp, background: "#F9FAFB" }} /></div>
+              <div><label className="stat-label block mb-1">SKU</label><input readOnly value={a.sku} style={{ ...inp, background: "#F9FAFB" }} /></div>
+              <div><label className="stat-label block mb-1">Quantity</label><input type="number" min={1} required value={orderQty} onChange={(e) => setOrderQty(Number(e.target.value))} style={inp} /></div>
+              <div><label className="stat-label block mb-1">Delivery Date</label><input type="date" required value={orderDate} onChange={(e) => setOrderDate(e.target.value)} style={inp} /></div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Btn type="button" variant="ghost" size="sm" onClick={() => setOrderForRow(null)}>Cancel</Btn>
+                <Btn type="submit">Confirm Order</Btn>
+              </div>
+            </form>
+          </CenterModal>
+        );
+      })()}
     </div>
   );
 }
