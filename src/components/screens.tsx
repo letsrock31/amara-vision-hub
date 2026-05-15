@@ -295,7 +295,7 @@ export function MyOrders() {
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState("30d");
   const [page, setPage] = useState(1);
-
+  const { openAction } = useApp();
   const filtered = DEALER_ORDERS.filter((o) =>
     o.id.toLowerCase().includes(search.toLowerCase()) ||
     o.items.toLowerCase().includes(search.toLowerCase())
