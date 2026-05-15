@@ -8,7 +8,7 @@ import {
 import { useApp, type CartItem, type DealerOrder } from "@/lib/app-context";
 import { StatCard, StatusBadge, PageHeader, AISuggestions, Btn, FilterBar, Pagination } from "./ui-bits";
 import { Search, ShoppingCart, X, Plus, Minus, ArrowRight, Trash2, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, Phone, Mail, RefreshCw, Receipt, MessageSquare, BarChart2, Pencil, Download } from "lucide-react";
-import { ProductDetailModal, TrackOrderModal, InvoicePanel, ComplaintModal, EscalateModal, ContactDealerCard, StarRating } from "./shared";
+import { ProductDetailModal, TrackOrderModal, InvoicePanel, ComplaintModal, EscalateModal, ContactDealerCard, StarRating, SkuDetailModal, RegionDetailModal } from "./shared";
 
 const PAGE_SIZE = 8;
 const DELIVERY_ADDRESS = "Shop 14, Chandni Chowk Market, Delhi 110006";
@@ -1203,10 +1203,15 @@ export function DealerOrdersAdmin() {
 
 /* =================== ADMIN/RSM: SECONDARY SALES =================== */
 export function SecondarySales() {
-  const { setView, setDealerOrdersFilter } = useApp();
+  const { setView, setDealerOrdersFilter, addOrder, addNotification } = useApp();
   const max = Math.max(...SKU_SELLTHROUGH.map((s) => s.units));
   const [sentRows, setSentRows] = useState<Set<number>>(new Set());
   const [confirmRow, setConfirmRow] = useState<number | null>(null);
+  const [skuDetail, setSkuDetail] = useState<string | null>(null);
+  const [regionDetail, setRegionDetail] = useState<string | null>(null);
+  const [orderForRow, setOrderForRow] = useState<number | null>(null);
+  const [orderQty, setOrderQty] = useState<number>(0);
+  const [orderDate, setOrderDate] = useState<string>("");
 
   const insightItems = [
     { text: "Amaron Pro 35Ah trending 23% above forecast in NCR. Consider increasing allocation.", action: "Reallocate", onAction: () => setView("dealer-orders") },
@@ -1231,7 +1236,10 @@ export function SecondarySales() {
           <div className="stat-label mb-3">SKU sell-through (this month)</div>
           <div className="space-y-3">
             {SKU_SELLTHROUGH.map((s) => (
-              <div key={s.sku}>
+              <div key={s.sku}
+                onClick={() => setSkuDetail(s.sku)}
+                className="hover:bg-[#F9FAFB] rounded p-1 -m-1"
+                style={{ cursor: "pointer" }}>
                 <div className="flex justify-between" style={{ fontSize: 13 }}>
                   <span style={{ fontWeight: 500 }}>{s.sku}</span><span style={{ color: "#4B5563" }}>{s.units.toLocaleString("en-IN")}</span>
                 </div>
@@ -1247,8 +1255,10 @@ export function SecondarySales() {
           <div className="stat-label mb-3">Dealer activity by region</div>
           <div className="space-y-2">
             {REGIONS.map((r) => (
-              <div key={r.name} className="flex items-center justify-between py-2"
-                style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <div key={r.name}
+                onClick={() => setRegionDetail(r.name)}
+                className="flex items-center justify-between py-2 hover:bg-[#F9FAFB] rounded px-1 -mx-1"
+                style={{ borderBottom: "1px solid #E5E7EB", cursor: "pointer" }}>
                 <div className="flex items-center gap-2">
                   <span style={{
                     width: 8, height: 8, borderRadius: "50%",
@@ -1270,7 +1280,7 @@ export function SecondarySales() {
             <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
               <th className="py-2 px-4">Dealer</th><th className="py-2 px-4">Region</th>
               <th className="py-2 px-4">SKU</th><th className="py-2 px-4">Days to Stock-out</th>
-              <th className="py-2 px-4">Current Stock</th><th className="py-2 px-4">Reorder Qty</th><th className="py-2 px-4"></th>
+              <th className="py-2 px-4">Current Stock</th><th className="py-2 px-4">Reorder Qty</th><th className="py-2 px-4"></th><th className="py-2 px-4"></th>
             </tr>
           </thead>
           <tbody>
@@ -1288,6 +1298,9 @@ export function SecondarySales() {
                   ) : (
                     <Btn size="sm" onClick={() => setConfirmRow(i)}>Send Alert</Btn>
                   )}
+                </td>
+                <td className="py-3 px-4">
+                  <Btn size="sm" variant="ghost" onClick={() => { setOrderForRow(i); setOrderQty(a.reorder); setOrderDate(""); }}>Create Order</Btn>
                 </td>
               </tr>
             ))}
@@ -1307,6 +1320,45 @@ export function SecondarySales() {
           }}
         />
       )}
+      {skuDetail && <SkuDetailModal sku={skuDetail} onClose={() => setSkuDetail(null)} />}
+      {regionDetail && <RegionDetailModal region={regionDetail} onClose={() => setRegionDetail(null)} />}
+      {orderForRow !== null && (() => {
+        const a = STOCKOUT_ALERTS[orderForRow];
+        const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
+        return (
+          <CenterModal widthClass="max-w-md">
+            <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Create Order for {a.dealer}</h3>
+              <button onClick={() => setOrderForRow(null)}><X size={18} /></button>
+            </div>
+            <form
+              className="p-5 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+                const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                addOrder({
+                  id, date: today, items: `${a.sku} ×${orderQty}`, total: 0,
+                  status: "Processing", eta: orderDate || today,
+                  dealer: a.dealer, location: a.region,
+                });
+                addNotification("Order " + id + " created on behalf of " + a.dealer);
+                setOrderForRow(null);
+                toast.success("Order " + id + " created");
+              }}
+            >
+              <div><label className="stat-label block mb-1">Dealer</label><input readOnly value={a.dealer} style={{ ...inp, background: "#F9FAFB" }} /></div>
+              <div><label className="stat-label block mb-1">SKU</label><input readOnly value={a.sku} style={{ ...inp, background: "#F9FAFB" }} /></div>
+              <div><label className="stat-label block mb-1">Quantity</label><input type="number" min={1} required value={orderQty} onChange={(e) => setOrderQty(Number(e.target.value))} style={inp} /></div>
+              <div><label className="stat-label block mb-1">Delivery Date</label><input type="date" required value={orderDate} onChange={(e) => setOrderDate(e.target.value)} style={inp} /></div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Btn type="button" variant="ghost" size="sm" onClick={() => setOrderForRow(null)}>Cancel</Btn>
+                <Btn type="submit">Confirm Order</Btn>
+              </div>
+            </form>
+          </CenterModal>
+        );
+      })()}
     </div>
   );
 }
@@ -1314,6 +1366,22 @@ export function SecondarySales() {
 /* =================== ADMIN: GLOBAL DASHBOARD =================== */
 export function AdminDashboard() {
   const { setView } = useApp();
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [topOpen, setTopOpen] = useState(true);
+  const regionRows = [
+    { r: "NCR", d: 42, o: 312, v: "₹4.82 Cr", dor: 6 },
+    { r: "Maharashtra", d: 38, o: 248, v: "₹3.41 Cr", dor: 4 },
+    { r: "Tamil Nadu", d: 31, o: 201, v: "₹2.94 Cr", dor: 3 },
+    { r: "Karnataka", d: 27, o: 178, v: "₹2.10 Cr", dor: 5 },
+    { r: "Telangana", d: 19, o: 112, v: "₹1.55 Cr", dor: 7 },
+  ];
+  const topDealers = [
+    { rank: 1, name: "Royal Battery", city: "Meerut", orders: 24, value: "₹3.67 L", last: "1 day ago" },
+    { rank: 2, name: "Verma Battery House", city: "Gurgaon", orders: 31, value: "₹4.12 L", last: "Today" },
+    { rank: 3, name: "Singh Motors", city: "Noida", orders: 19, value: "₹2.98 L", last: "2 days ago" },
+    { rank: 4, name: "KK Batteries", city: "Pune", orders: 22, value: "₹2.76 L", last: "Today" },
+    { rank: 5, name: "Sri Venkat Electricals", city: "Chennai", orders: 17, value: "₹2.41 L", last: "3 days ago" },
+  ];
   return (
     <div>
       <PageHeader title="Cognilix Dashboard" sub="Unified demand and channel intelligence" />
@@ -1330,6 +1398,35 @@ export function AdminDashboard() {
         <StatCard label="Orders Today" value="18" change="+4 vs yesterday" accent="green" onClick={() => setView("dealer-orders")} />
         <StatCard label="Fleet Sites at Risk" value="8" change="Across 3 customers" accent="amber" onClick={() => setView("fleet-health")} />
         <StatCard label="Contracts Expiring (60d)" value="3" change="₹2.34 Cr at risk" accent="amber" onClick={() => setView("contracts")} />
+      </div>
+      <div className="card-base mb-5">
+        <button onClick={() => setRegionOpen((o) => !o)} className="w-full flex justify-between items-center">
+          <div className="stat-label">Regional Performance This Month</div>
+          {regionOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        {regionOpen && (
+          <div className="overflow-x-auto mt-3">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-2 px-3">Region</th><th className="py-2 px-3">Active Dealers</th>
+                  <th className="py-2 px-3">Orders</th><th className="py-2 px-3">Total Value</th><th className="py-2 px-3">Dormant Dealers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {regionRows.map((x) => (
+                  <tr key={x.r} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{x.r}</td>
+                    <td className="py-2 px-3">{x.d}</td>
+                    <td className="py-2 px-3">{x.o}</td>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{x.v}</td>
+                    <td className="py-2 px-3" style={{ color: "#C00000" }}>{x.dor}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
       <div className="grid lg:grid-cols-2 gap-4 mb-5">
         <div className="card-base" style={{ borderTop: "3px solid #C00000" }}>
@@ -1367,6 +1464,39 @@ export function AdminDashboard() {
             ))}
           </div>
         </div>
+      </div>
+      <div className="card-base mb-5">
+        <button onClick={() => setTopOpen((o) => !o)} className="w-full flex justify-between items-center">
+          <div className="stat-label">Top Dealers by Order Value (MTD)</div>
+          {topOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        {topOpen && (
+          <div className="overflow-x-auto mt-3">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-2 px-3">Rank</th><th className="py-2 px-3">Dealer</th><th className="py-2 px-3">City</th>
+                  <th className="py-2 px-3">Orders</th><th className="py-2 px-3">Value (MTD)</th><th className="py-2 px-3">Last Order</th><th className="py-2 px-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {topDealers.map((d) => (
+                  <tr key={d.rank} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>#{d.rank}</td>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{d.name}</td>
+                    <td className="py-2 px-3" style={{ color: "#4B5563" }}>{d.city}</td>
+                    <td className="py-2 px-3">{d.orders}</td>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{d.value}</td>
+                    <td className="py-2 px-3" style={{ color: "#4B5563" }}>{d.last}</td>
+                    <td className="py-2 px-3">
+                      <button onClick={() => setView("dealer-orders")} aria-label="View dealer orders"><ArrowRight size={16} color="#534AB7" /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1421,9 +1551,18 @@ function ScheduleVisitModal({ dealer, onClose }: { dealer: { name: string; city:
 }
 
 export function RSMDashboard() {
+  const { setView, setDealerOrdersFilter } = useApp();
   const [visitDealer, setVisitDealer] = useState<typeof RSM_DEALERS[number] | null>(null);
+  const [posDealer, setPosDealer] = useState<typeof RSM_DEALERS[number] | null>(null);
   const [priorityIds, setPriorityIds] = useState<string[]>([]);
   const togglePriority = (id: string) => setPriorityIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
+  const posSample = [
+    { date: "14 May 2026", product: "Amaron Pro 35Ah", qty: 4 },
+    { date: "12 May 2026", product: "Amaron Pro 35Ah", qty: 2 },
+    { date: "09 May 2026", product: "Amaron Hi-Life 2.5Ah", qty: 6 },
+    { date: "06 May 2026", product: "Powerzone 45Ah", qty: 3 },
+    { date: "03 May 2026", product: "Amaron Pro 35Ah", qty: 5 },
+  ];
 
   return (
     <div>
@@ -1436,10 +1575,10 @@ export function RSMDashboard() {
         ]}
       />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        <StatCard label="Active Dealers" value="42" change="3 new this month" accent="crimson" />
-        <StatCard label="Region Sales (MTD)" value="₹4.82 Cr" change="+14% vs last month" accent="green" />
-        <StatCard label="Dormant Dealers" value="6" change="No order > 7 days" accent="amber" />
-        <StatCard label="Stock-out Alerts" value="2" change="Within 12 days" accent="amber" />
+        <StatCard label="Active Dealers" value="42" change="3 new this month" accent="crimson" onClick={() => setView("dealer-orders")} />
+        <StatCard label="Region Sales (MTD)" value="₹4.82 Cr" change="+14% vs last month" accent="green" onClick={() => setView("secondary-sales")} />
+        <StatCard label="Dormant Dealers" value="6" change="No order > 7 days" accent="amber" onClick={() => { setDealerOrdersFilter("dormant"); setView("dealer-orders"); }} />
+        <StatCard label="Stock-out Alerts" value="2" change="Within 12 days" accent="amber" onClick={() => setView("secondary-sales")} />
       </div>
 
       <div className="rounded-lg mb-5" style={{ border: "1px solid #E5E7EB", background: "#FFFFFF" }}>
@@ -1478,7 +1617,9 @@ export function RSMDashboard() {
                     <td className="py-2 px-3" style={{ color: d.status === "Dormant" ? "#C00000" : "#4B5563" }}>{d.lastOrder}</td>
                     <td className="py-2 px-3"><StatusBadge status={d.status} /></td>
                     <td className="py-2 px-3">
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-wrap">
+                        <Btn size="sm" variant="ghost" onClick={() => setView("dealer-orders")}>Orders</Btn>
+                        <Btn size="sm" variant="ghost" onClick={() => setPosDealer(d)}>POS</Btn>
                         <Btn size="sm" variant="ghost" onClick={() => setVisitDealer(d)}>Visit</Btn>
                         <Btn size="sm" variant="ghost" onClick={() => togglePriority(d.id)}>{isPri ? "Unflag" : "Flag"}</Btn>
                       </div>
@@ -1493,6 +1634,33 @@ export function RSMDashboard() {
 
       <SecondarySales />
       {visitDealer && <ScheduleVisitModal dealer={visitDealer} onClose={() => setVisitDealer(null)} />}
+      {posDealer && (
+        <CenterModal widthClass="max-w-lg">
+          <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>POS History: {posDealer.name}</h3>
+            <button onClick={() => setPosDealer(null)}><X size={18} /></button>
+          </div>
+          <div className="p-5">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-2 px-3">Date</th><th className="py-2 px-3">Product</th><th className="py-2 px-3">Total Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {posSample.map((p, i) => (
+                  <tr key={i} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2 px-3" style={{ color: "#4B5563" }}>{p.date}</td>
+                    <td className="py-2 px-3">{p.product}</td>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{p.qty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex justify-end pt-4"><Btn onClick={() => setPosDealer(null)}>Close</Btn></div>
+          </div>
+        </CenterModal>
+      )}
     </div>
   );
 }
@@ -1903,7 +2071,162 @@ export function IAMFleetHealth() {
 
 /* =================== IAM: CUSTOMERS DASHBOARD =================== */
 export function IAMCustomers() {
-  const { setView, setSelectedCustomer } = useApp();
+  const { setView, setSelectedCustomer, serviceRequests, addNotification } = useApp();
+  const [view360, setView360] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [meetDate, setMeetDate] = useState("");
+  const [meetTime, setMeetTime] = useState("9:00 AM");
+  const [meetAgenda, setMeetAgenda] = useState("");
+
+  if (view360) {
+    const customer = view360;
+    const sites = ALL_FLEET_SITES.filter((s) => s.customer === customer);
+    const criticalSites = sites.filter((s) => s.status === "Critical").length;
+    const contracts = CONTRACTS.filter((c) => c.customer === customer);
+    const siteIds = new Set(sites.map((s) => s.site));
+    const reqs = serviceRequests.filter((r) => r.siteName?.includes(customer) || siteIds.has(r.siteName));
+    const recentReqs = reqs.slice(0, 3);
+    const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
+    const timeSlots: string[] = [];
+    for (let h = 9; h <= 18; h++) {
+      const hr12 = h > 12 ? h - 12 : h;
+      const ampm = h >= 12 ? "PM" : "AM";
+      timeSlots.push(`${hr12}:00 ${ampm}`);
+      if (h < 18) timeSlots.push(`${hr12}:30 ${ampm}`);
+    }
+    const daysToExpiry = (end: string) => {
+      const d = new Date(end);
+      return Math.round((d.getTime() - Date.now()) / 86400000);
+    };
+    return (
+      <div>
+        <button onClick={() => setView360(null)} className="inline-flex items-center gap-2 mb-3" style={{ fontSize: 13, color: "#534AB7", fontWeight: 600 }}>
+          <ArrowLeft size={14} /> Back to Customers
+        </button>
+        <PageHeader title={customer} sub="Customer 360 View" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <StatCard label="Total Sites" value={String(sites.length)} accent="green" />
+          <StatCard label="Critical Sites" value={String(criticalSites)} accent="crimson" />
+          <StatCard label="Active Contracts" value={String(contracts.length)} accent="amber" />
+          <StatCard label="Open Service Requests" value={String(reqs.length)} accent="amber" />
+        </div>
+
+        <div className="card-base mb-4" style={{ borderTop: "3px solid #C00000" }}>
+          <div className="stat-label mb-3">Fleet Health Summary</div>
+          <div className="overflow-x-auto">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-2 px-3">Site ID</th><th className="py-2 px-3">Location</th><th className="py-2 px-3">Units</th><th className="py-2 px-3">Status</th><th className="py-2 px-3">Life Left %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sites.slice(0, 4).map((s) => {
+                  const lifeLeft = Math.max(0, 100 - s.days);
+                  return (
+                    <tr key={s.site} style={{ borderTop: "1px solid #E5E7EB" }}>
+                      <td className="py-2 px-3" style={{ fontWeight: 600 }}>{s.site}</td>
+                      <td className="py-2 px-3" style={{ color: "#4B5563" }}>{s.location}</td>
+                      <td className="py-2 px-3">{s.units}</td>
+                      <td className="py-2 px-3"><StatusBadge status={s.status} /></td>
+                      <td className="py-2 px-3" style={{ fontWeight: 600 }}>{lifeLeft}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="card-base mb-4" style={{ borderTop: "3px solid #00A651" }}>
+          <div className="stat-label mb-3">Active Contracts</div>
+          <div className="space-y-2">
+            {contracts.length === 0 && <div style={{ fontSize: 13, color: "#6B7280" }}>No active contracts.</div>}
+            {contracts.map((c) => {
+              const dte = daysToExpiry(c.end);
+              const amber = dte < 60;
+              return (
+                <div key={c.id} className="flex justify-between items-center py-2" style={{ borderBottom: "1px solid #E5E7EB", fontSize: 13 }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{c.id}</div>
+                    <div style={{ fontSize: 12, color: "#4B5563" }}>{c.product}</div>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#4B5563" }}>{c.remaining} units left</div>
+                  <div style={{ fontSize: 12, color: amber ? "#EF9F27" : "#4B5563", fontWeight: amber ? 700 : 400 }}>
+                    {c.end}{amber ? ` · ${dte}d` : ""}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="card-base mb-4">
+          <div className="stat-label mb-3">Recent Service Requests</div>
+          {recentReqs.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#6B7280" }}>No service requests yet.</div>
+          ) : (
+            <div className="space-y-2">
+              {recentReqs.map((r) => (
+                <div key={r.id} className="flex justify-between items-center py-2" style={{ borderBottom: "1px solid #E5E7EB", fontSize: 13 }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{r.id}</div>
+                    <div style={{ fontSize: 12, color: "#4B5563" }}>{r.siteName} · {r.type}</div>
+                  </div>
+                  <StatusBadge status={r.status || "Open"} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="card-base mb-4">
+          <div className="stat-label mb-3">Account Manager</div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Arjun Sharma</div>
+          <div className="flex items-center gap-3 mt-2" style={{ fontSize: 13, color: "#4B5563" }}>
+            <span className="inline-flex items-center gap-1"><Phone size={12} /> +91 98118 76543</span>
+            <span className="inline-flex items-center gap-1"><Mail size={12} /> arjun.sharma@cognilix.com</span>
+          </div>
+          <div className="mt-3"><Btn size="sm" onClick={() => setScheduleOpen(true)}>Schedule Review Call</Btn></div>
+        </div>
+
+        {scheduleOpen && (
+          <CenterModal widthClass="max-w-md">
+            <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Schedule Review Call — {customer}</h3>
+              <button onClick={() => setScheduleOpen(false)}><X size={18} /></button>
+            </div>
+            <form
+              className="p-5 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const mtgId = "MTG-" + Math.floor(1000 + Math.random() * 9000);
+                addNotification("Review call with " + customer + " scheduled");
+                toast.success("Meeting scheduled. Reference: " + mtgId);
+                setScheduleOpen(false);
+                setMeetDate(""); setMeetAgenda("");
+              }}
+            >
+              <div><label className="stat-label block mb-1">Date</label><input type="date" required value={meetDate} onChange={(e) => setMeetDate(e.target.value)} style={inp} /></div>
+              <div><label className="stat-label block mb-1">Time</label>
+                <select value={meetTime} onChange={(e) => setMeetTime(e.target.value)} style={inp}>
+                  {timeSlots.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div><label className="stat-label block mb-1">Agenda</label>
+                <textarea required value={meetAgenda} onChange={(e) => setMeetAgenda(e.target.value)} rows={3} style={inp} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Btn type="button" variant="ghost" size="sm" onClick={() => setScheduleOpen(false)}>Cancel</Btn>
+                <Btn type="submit">Schedule</Btn>
+              </div>
+            </form>
+          </CenterModal>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader title="My Customers" sub="Indus Towers · BSNL · Hitachi UPS Solutions" />
@@ -1932,7 +2255,7 @@ export function IAMCustomers() {
             borderTop: `3px solid ${x.status === "Critical" ? "#C00000" : "#EF9F27"}`,
           }}>
             <div className="flex justify-between items-start">
-              <div style={{ fontSize: 16, fontWeight: 600 }}>{x.c}</div>
+              <div onClick={() => setView360(x.c)} style={{ fontSize: 16, fontWeight: 600, cursor: "pointer" }}>{x.c}</div>
               <StatusBadge status={x.status} />
             </div>
             <div className="grid grid-cols-3 gap-2 mt-4">
@@ -1940,7 +2263,8 @@ export function IAMCustomers() {
               <div><div className="stat-label">Units</div><div style={{ fontSize: 22, fontWeight: 700 }}>{x.units}</div></div>
               <div><div className="stat-label">Contracts</div><div style={{ fontSize: 22, fontWeight: 700 }}>{x.contracts}</div></div>
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex gap-2 flex-wrap">
+              <Btn variant="ghost" size="sm" onClick={() => setView360(x.c)}>360 View</Btn>
               <Btn variant="ghost" size="sm" onClick={() => { setSelectedCustomer(x.c); setView("fleet-health"); }}>View Fleet</Btn>
               <Btn size="sm" onClick={() => { setSelectedCustomer(x.c); setView("contracts"); }}>View Contracts</Btn>
             </div>
