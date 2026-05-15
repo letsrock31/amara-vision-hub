@@ -13,26 +13,26 @@
   --color-card: var(--card);
   --color-border: var(--border);
   --color-crimson: #c00000;
-  --color-crimson-tint: #fef2f2;
+  --color-crimson-tint: #2E0D0D;
   --color-green: #22a850;
-  --color-green-tint: #f0fdf4;
+  --color-green-tint: #0A2212;
   --color-amber: #ef9f27;
-  --color-amber-tint: #fffbeb;
+  --color-amber-tint: #2E1E00;
   --color-cogniq: #534ab7;
-  --color-cogniq-bg: #f5f4ff;
-  --color-cogniq-border: #cecbf6;
+  --color-cogniq-bg: #14142A;
+  --color-cogniq-border: #3A3470;
   --radius-lg: 8px;
   --radius-md: 6px;
   --radius-sm: 4px;
 }
 
 :root {
-  --background: #f2f2f0;
-  --foreground: #111111;
-  --muted: #f5f5f3;
-  --muted-foreground: #9ca3af;
-  --card: #ffffff;
-  --border: #e5e5e0;
+  --background: #0D0D0D;
+  --foreground: #FFFFFF;
+  --muted: #1A1A1A;
+  --muted-foreground: #9CA3AF;
+  --card: #1A1A1A;
+  --border: #2E2E2E;
 }
 
 @layer base {
@@ -44,26 +44,29 @@
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4, h5, h6 { font-weight: 500; }
+  h1, h2, h3, h4, h5, h6 { font-weight: 500; color: #FFFFFF; }
   b, strong { font-weight: 500; }
 }
 
 @layer components {
   .card-base {
-    background: #ffffff;
-    border: 0.5px solid #e5e5e0;
+    background: #1A1A1A;
+    border: 0.5px solid #2E2E2E;
     border-radius: 8px;
     padding: 16px;
   }
-  .stat-label { font-size: 9px; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.05em; }
-  .stat-value { font-size: 22px; color: #111111; font-weight: 500; }
+  .stat-label { font-size: 9px; text-transform: uppercase; color: #666666; letter-spacing: 0.05em; }
+  .stat-value { font-size: 22px; color: #FFFFFF; font-weight: 500; }
   .stat-change { font-size: 9px; }
-  .badge-critical { background: #fef2f2; color: #c00000; }
-  .badge-risk { background: #fffbeb; color: #ef9f27; }
-  .badge-good { background: #f0fdf4; color: #22a850; }
+  .badge-critical { background: #2E0D0D; color: #C00000; }
+  .badge-risk { background: #2E1E00; color: #EF9F27; }
+  .badge-good { background: #0A2212; color: #22A850; }
   .nav-active {
-    border-left: 2px solid #c00000;
-    background: #fef2f2;
-    color: #c00000;
+    border-left: 2px solid #C00000;
+    background: #1A1A1A;
+    color: #C00000;
   }
+  table tr:hover { background: #222222; }
+  input::placeholder, textarea::placeholder { color: #555555; }
+  input:focus, textarea:focus, select:focus { border-color: #C00000 !important; }
 }
