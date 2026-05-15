@@ -1,5 +1,7 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { toast } from "sonner";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useApp, type ActionRequest } from "@/lib/app-context";
 
 export function StatCard({
   label, value, change, accent = "none",
