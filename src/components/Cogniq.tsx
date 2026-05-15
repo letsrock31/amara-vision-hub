@@ -64,14 +64,15 @@ export function Cogniq() {
     <>
       {open && (
         <div
-          className="fixed bottom-20 right-4 md:right-6 z-40 flex flex-col"
+          className="fixed bottom-20 right-4 md:right-6 z-50 flex flex-col"
           style={{
             width: "min(380px, calc(100vw - 32px))",
             height: "min(540px, calc(100vh - 120px))",
-            background: "#1A1A1A",
+            maxHeight: "65vh",
+            background: "#14142A",
             border: "1px solid #3A3470",
             borderRadius: 12,
-            boxShadow: "0 10px 40px rgba(83,74,183,0.18)",
+            boxShadow: "0 10px 40px rgba(83,74,183,0.45)",
           }}
         >
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #2E2E2E" }}>
