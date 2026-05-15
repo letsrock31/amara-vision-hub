@@ -59,16 +59,17 @@ function App() {
   })();
 
   return (
-    <div style={{ background: "#0A0A0F", minHeight: "100vh" }}>
+    <div style={{ background: "#FFFFFF", minHeight: "100vh" }}>
       <Header onMenuClick={() => setMobileNav(true)} />
       <Sidebar mobileOpen={mobileNav} onClose={() => setMobileNav(false)} />
-      <main className="md:ml-[180px] pt-[52px] pb-24 md:pb-10">
+      <main className="md:ml-[180px] pt-[52px] pb-24 md:pb-10" style={{ background: "#FFFFFF", minHeight: "100vh" }}>
         <div className="p-4 md:p-6">{screen}</div>
         <div
           className="text-center mt-8 px-4"
-          style={{ fontSize: 8, color: "#444444" }}
+          style={{ fontSize: 11, color: "#FFFFFF", background: "#0A0A0F", padding: "10px 16px" }}
         >
-          cognilix.com | Powered By Moglix
+          <span style={{ color: "#FFFFFF" }}>cognilix.com | Powered By </span>
+          <span style={{ color: "#E1261C", fontWeight: 600 }}>Moglix</span>
         </div>
       </main>
       <MobileBottomNav />
