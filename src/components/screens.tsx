@@ -2410,16 +2410,36 @@ function sampleReleaseOrdersFor(contractId: string) {
 
 export function MyContracts() {
   const mine = CONTRACTS.filter((c) => c.customer === "Indus Towers");
-  const { setView, setSelectedContractId } = useApp();
+  const { setView, setSelectedContractId, draftReleaseOrder, setDraftReleaseOrder, addNotification } = useApp();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [trackRo, setTrackRo] = useState<{ id: string; status: string; eta: string } | null>(null);
+  const [invoiceRo, setInvoiceRo] = useState<{ id: string; total: number } | null>(null);
+  const [complaintRo, setComplaintRo] = useState<string | null>(null);
+  const [renewalContract, setRenewalContract] = useState<string | null>(null);
+  const [renewDuration, setRenewDuration] = useState("12 months");
+  const [renewQty, setRenewQty] = useState(0);
+  const [renewNotes, setRenewNotes] = useState("");
+  const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
   const daysToExpiry = (end: string) => {
     const [d, m, y] = end.split(" ");
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(m);
     return Math.round((new Date(Number(y), months, Number(d)).getTime() - Date.now()) / 86400000);
   };
+  const renewC = renewalContract ? CONTRACTS.find((c) => c.id === renewalContract) : null;
+  const draftProduct = draftReleaseOrder ? CONTRACTS.find((c) => c.id === draftReleaseOrder.contractId)?.product : null;
 
   return (
     <div>
+      {draftReleaseOrder && (
+        <div className="rounded-lg p-3 mb-3 flex items-center justify-between flex-wrap gap-2"
+          style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", color: "#2B31B8", fontSize: 13 }}>
+          <span>You have a saved draft release order for <strong>{draftProduct ?? "a contract"}</strong>. Continue?</span>
+          <div className="flex gap-2">
+            <Btn size="sm" onClick={() => { setSelectedContractId(draftReleaseOrder.contractId); setView("release-order"); }}>Continue</Btn>
+            <button onClick={() => setDraftReleaseOrder(null)} style={{ fontSize: 12, color: "#4B5563", textDecoration: "underline" }}>Discard</button>
+          </div>
+        </div>
+      )}
       <PageHeader title="My Contracts" sub="Active rate contracts with Amara Raja" />
       <AISuggestions
         items={[
@@ -2459,11 +2479,13 @@ export function MyContracts() {
                   <span>{c.start}</span><span>{c.end}</span>
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex gap-2 flex-wrap">
                 <Btn variant="ghost" size="sm" onClick={() => setExpanded(isOpen ? null : c.id)}>
                   {isOpen ? <>Hide Orders <ChevronUp size={12} style={{ display: "inline", marginLeft: 4 }} /></> : <>View Orders <ChevronDown size={12} style={{ display: "inline", marginLeft: 4 }} /></>}
                 </Btn>
                 <Btn size="sm" onClick={() => { setSelectedContractId(c.id); setView("release-order"); }}>Place Release Order</Btn>
+                <Btn variant="ghost" size="sm" onClick={() => { setRenewalContract(c.id); setRenewQty(c.total); }}>Renewal</Btn>
+                <Btn variant="ghost" size="sm" onClick={() => toast.success("Contract_" + c.id + ".pdf downloaded")}><Download size={12} /> Download Contract</Btn>
               </div>
               {isOpen && (
                 <div className="mt-4 pt-3" style={{ borderTop: "1px solid #E5E7EB" }}>
@@ -2474,7 +2496,7 @@ export function MyContracts() {
                         <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
                           <th className="py-2 px-3">Order ID</th><th className="py-2 px-3">Date</th>
                           <th className="py-2 px-3">Qty</th><th className="py-2 px-3">Site</th>
-                          <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th>
+                          <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th><th className="py-2 px-3">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2486,6 +2508,13 @@ export function MyContracts() {
                             <td className="py-2 px-3">{r.site}</td>
                             <td className="py-2 px-3"><StatusBadge status={r.status} /></td>
                             <td className="py-2 px-3">{r.eta}</td>
+                            <td className="py-2 px-3">
+                              <div className="flex gap-2">
+                                <button onClick={() => setTrackRo({ id: r.id, status: r.status ?? "Dispatched", eta: r.eta })} aria-label="Track"><Package size={14} color="#534AB7" /></button>
+                                <button onClick={() => setInvoiceRo({ id: r.id, total: r.qty * c.rate })} aria-label="Invoice"><Receipt size={14} color="#534AB7" /></button>
+                                <button onClick={() => setComplaintRo(r.id)} aria-label="Complaint"><MessageSquare size={14} color="#534AB7" /></button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2497,6 +2526,49 @@ export function MyContracts() {
           );
         })}
       </div>
+      {trackRo && <TrackOrderModal orderId={trackRo.id} status={trackRo.status} eta={trackRo.eta} onClose={() => setTrackRo(null)} />}
+      {invoiceRo && <InvoicePanel orderId={invoiceRo.id} total={invoiceRo.total} onClose={() => setInvoiceRo(null)} />}
+      {complaintRo && <ComplaintModal orderId={complaintRo} onClose={() => setComplaintRo(null)} />}
+      {renewC && (
+        <CenterModal widthClass="max-w-md">
+          <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Request Contract Renewal</h3>
+            <button onClick={() => setRenewalContract(null)}><X size={18} /></button>
+          </div>
+          <form
+            className="p-5 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const id = "REQ-" + Math.floor(1000 + Math.random() * 9000);
+              addNotification("Renewal Request " + id + " submitted for " + renewC.id);
+              toast.success("Renewal Request " + id + " submitted. Your account manager will respond within 2 business days.");
+              setRenewalContract(null);
+              setRenewNotes("");
+            }}
+          >
+            <div className="rounded p-3" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", fontSize: 13 }}>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{renewC.product}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Total Quantity</span><span>{renewC.total} units</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Expiry</span><span>{renewC.end}</span></div>
+            </div>
+            <div><label className="stat-label block mb-1">Proposed Duration</label>
+              <select value={renewDuration} onChange={(e) => setRenewDuration(e.target.value)} style={inp}>
+                <option>6 months</option><option>12 months</option><option>24 months</option>
+              </select>
+            </div>
+            <div><label className="stat-label block mb-1">Proposed Quantity</label>
+              <input type="number" min={1} required value={renewQty} onChange={(e) => setRenewQty(Number(e.target.value))} style={inp} />
+            </div>
+            <div><label className="stat-label block mb-1">Notes</label>
+              <textarea rows={3} value={renewNotes} onChange={(e) => setRenewNotes(e.target.value)} style={inp} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Btn type="button" variant="ghost" size="sm" onClick={() => setRenewalContract(null)}>Cancel</Btn>
+              <Btn type="submit">Submit</Btn>
+            </div>
+          </form>
+        </CenterModal>
+      )}
     </div>
   );
 }
