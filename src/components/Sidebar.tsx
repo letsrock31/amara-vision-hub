@@ -42,9 +42,9 @@ export const NAV_BY_PROFILE: Record<Profile, NavItem[]> = {
 function NavBtn({ item, active, onClick }: { item: NavItem; active: boolean; onClick: () => void }) {
   const Icon = item.icon;
   const [hover, setHover] = useState(false);
-  const color = active ? "#C00000" : hover ? "#CCCCCC" : "#666666";
-  const iconColor = active ? "#C00000" : hover ? "#CCCCCC" : "#555555";
-  const bg = active ? "#16161D" : hover ? "#16161D" : "transparent";
+  const color = active ? "#FFFFFF" : hover ? "#FFFFFF" : "rgba(255,255,255,0.72)";
+  const iconColor = active ? "#C6F24E" : hover ? "#FFFFFF" : "rgba(255,255,255,0.72)";
+  const bg = active ? "rgba(255,255,255,0.12)" : hover ? "rgba(255,255,255,0.06)" : "transparent";
   return (
     <button
       onClick={onClick}
@@ -52,10 +52,11 @@ function NavBtn({ item, active, onClick }: { item: NavItem; active: boolean; onC
       onMouseLeave={() => setHover(false)}
       className="w-full flex items-center gap-2.5 px-4 py-2 transition-colors"
       style={{
-        borderLeft: active ? "2px solid #C00000" : "2px solid transparent",
+        borderLeft: active ? "2px solid #C6F24E" : "2px solid transparent",
         background: bg,
         color,
         fontSize: 12,
+        fontWeight: active ? 500 : 400,
       }}
     >
       <Icon size={14} color={iconColor} />
@@ -73,13 +74,13 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
   const content = (
     <>
       <div className="px-4 py-4">
-        <div style={{ fontSize: 9, textTransform: "uppercase", color: "#444444", letterSpacing: "0.05em" }}>
+        <div style={{ fontSize: 9, textTransform: "uppercase", color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em", fontWeight: 500 }}>
           {profile}
         </div>
       </div>
       {sections.map((sec) => (
         <div key={sec} className="mb-3">
-          <div className="px-4 mb-1.5" style={{ fontSize: 9, textTransform: "uppercase", color: "#444444", letterSpacing: "0.05em" }}>
+          <div className="px-4 mb-1.5" style={{ fontSize: 9, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", letterSpacing: "0.08em", fontWeight: 500 }}>
             {sec}
           </div>
           {items.filter((i) => i.section === sec).map((item) => (
@@ -95,11 +96,13 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
     </>
   );
 
+  const sidebarBg = "linear-gradient(180deg, #3D44E0 0%, #3138C4 100%)";
+
   return (
     <>
       <aside
         className="hidden md:block fixed left-0 top-[52px] bottom-0 z-30 overflow-y-auto"
-        style={{ width: 180, background: "#0F0F15", borderRight: "0.5px solid #1E1E27" }}
+        style={{ width: 180, background: sidebarBg, borderRight: "0.5px solid rgba(255,255,255,0.08)" }}
       >
         {content}
       </aside>
@@ -108,7 +111,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
           <div className="absolute inset-0 bg-black/50" />
           <aside
             className="absolute left-0 top-[52px] bottom-0 overflow-y-auto"
-            style={{ width: 220, background: "#0F0F15", borderRight: "0.5px solid #1E1E27" }}
+            style={{ width: 220, background: sidebarBg, borderRight: "0.5px solid rgba(255,255,255,0.08)" }}
             onClick={(e) => e.stopPropagation()}
           >
             {content}
