@@ -52,7 +52,7 @@ export function CogniqPanel({ children }: { children: ReactNode }) {
     >
       <div className="flex items-center gap-2 mb-3">
         <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#534ab7" }} />
-        <span style={{ fontSize: 11, color: "#534ab7", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <span style={{ fontSize: 11, color: "#AFA9EC", textTransform: "uppercase", letterSpacing: "0.05em" }}>
           Cogniq AI Insights
         </span>
       </div>
