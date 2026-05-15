@@ -2616,6 +2616,21 @@ export function PlaceReleaseOrder() {
           <div style={{ fontSize: 13, color: "#4B5563", marginTop: 4 }}>
             Contract remaining balance: <strong style={{ color: "#0A0A0F" }}>{confirmed.remaining} units</strong>
           </div>
+          <div className="mt-8 text-left max-w-md mx-auto">
+            <div className="stat-label mb-3">What Happens Next</div>
+            <div className="space-y-3">
+              {[
+                "Your release order has been sent to the Amara Raja warehouse. Processing begins within 4 business hours.",
+                "Our logistics partner will pick up from the warehouse and send you a tracking reference within 24 hours.",
+                "Batteries will be delivered to your site by the requested date. Our field team will coordinate installation if needed.",
+              ].map((txt, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#534AB7", color: "#FFFFFF", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</div>
+                  <div style={{ fontSize: 13, color: "#374151", paddingTop: 4 }}>{txt}</div>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="mt-6">
             <Btn onClick={() => setView("contracts")}>Back to My Contracts</Btn>
           </div>
