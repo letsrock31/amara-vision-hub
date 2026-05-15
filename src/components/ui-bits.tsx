@@ -68,7 +68,7 @@ export function CogniqBanner({ text, action }: { text: string; action?: string }
       style={{ background: "#14142A", border: "1px solid #3A3470" }}
     >
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#534ab7", marginTop: 6, flexShrink: 0 }} />
-      <div className="flex-1" style={{ fontSize: 12, color: "#534ab7" }}>{text}</div>
+      <div className="flex-1" style={{ fontSize: 12, color: "#AFA9EC" }}>{text}</div>
       {action && (
         <button
           className="px-3 py-1 rounded-md text-white whitespace-nowrap"
