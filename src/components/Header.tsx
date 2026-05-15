@@ -31,9 +31,9 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       >
         <Menu size={18} />
       </button>
-      <span style={{ color: "#FFFFFF", fontSize: 15, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 700 }}>COGNILIX</span>
-      <span style={{ width: 2, height: 20, background: "#FFFFFF", borderRadius: 1 }} />
-      <span style={{ color: "#FFFFFF", fontSize: 15, fontWeight: 700 }}>Amara Raja</span>
+      <span style={{ color: "#FFFFFF", fontSize: 16, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 800 }}>COGNILIX</span>
+      <span style={{ width: 2, height: 22, background: "#FFFFFF", borderRadius: 1 }} />
+      <span style={{ color: "#00A651", fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em" }}>Amara Raja</span>
       <div className="flex-1" />
       <div
         className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full"
