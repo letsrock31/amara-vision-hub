@@ -595,7 +595,7 @@ export function MyOrders() {
             {pageRows.map((o) => {
               const isOpen = expanded === o.id;
               return (
-                <>
+                <React.Fragment key={o.id}>
                   <tr key={o.id} style={{ borderTop: "1px solid #E5E7EB", cursor: "pointer" }} onClick={() => setExpanded(isOpen ? null : o.id)}>
                     <td className="py-3 px-4">{isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</td>
                     <td className="py-3 px-4" style={{ fontWeight: 600 }}>{o.id}</td>
