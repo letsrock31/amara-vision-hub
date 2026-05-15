@@ -859,7 +859,7 @@ export function MyContracts() {
                 <div className="mt-3 p-2.5 rounded" style={{ background: "#14142A", border: "1px solid #3A3470" }}>
                   <div className="flex items-start gap-2">
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#534ab7", marginTop: 5 }} />
-                    <div style={{ fontSize: 11, color: "#534ab7" }}>
+                    <div style={{ fontSize: 11, color: "#AFA9EC" }}>
                       At current consumption rate, this contract will be exhausted 3 weeks before expiry. Consider raising a new contract or emergency order.
                     </div>
                   </div>
