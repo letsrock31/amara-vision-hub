@@ -33,7 +33,7 @@ export function ActionModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={closeAction}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3">
       <div className="absolute inset-0 bg-black/50" />
       <div
         className="relative bg-white w-full max-w-lg rounded-xl overflow-hidden"
