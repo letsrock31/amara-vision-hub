@@ -58,25 +58,34 @@ export function PageHeader({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-export function CogniqPanel({ children, title = "Cogniq AI Insights" }: { children: ReactNode; title?: string }) {
+export function CogniqPanel({ children, title = "Cogniq AI Insights", defaultOpen = true }: { children: ReactNode; title?: string; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div
       className="rounded-lg p-4 mb-5"
       style={{ background: "#EEF0FF", border: "1px solid #C7CCF7" }}
     >
-      <div className="flex items-center gap-2 mb-3">
-        <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#5B5BF5" }} />
-        <span style={{ fontSize: 12, color: "#2B31B8", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
-          {title}
-        </span>
-      </div>
-      {children}
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between"
+        aria-expanded={open}
+      >
+        <div className="flex items-center gap-2">
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#5B5BF5" }} />
+          <span style={{ fontSize: 12, color: "#2B31B8", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
+            {title}
+          </span>
+        </div>
+        {open ? <ChevronUp size={18} color="#2B31B8" /> : <ChevronDown size={18} color="#2B31B8" />}
+      </button>
+      {open && <div className="mt-3">{children}</div>}
     </div>
   );
 }
 
 /** Standard AI suggestions block — placed at top of every screen for consistency */
-export function AISuggestions({ items }: { items: { text: string; action?: string; onAction?: () => void }[] }) {
+export function AISuggestions({ items }: { items: { text: string; action?: string; onAction?: () => void; actionRequest?: ActionRequest }[] }) {
+  const { openAction } = useApp();
   return (
     <CogniqPanel>
       <div className="space-y-2">
@@ -96,7 +105,26 @@ export function AISuggestions({ items }: { items: { text: string; action?: strin
               Dismiss
             </Btn>
             {it.action && (
-              <Btn variant="purple" size="sm" onClick={it.onAction ?? (() => toast.success(`${it.action} — action initiated`))}>
+              <Btn
+                variant="purple"
+                size="sm"
+                onClick={
+                  it.onAction
+                    ? it.onAction
+                    : () => openAction(
+                        it.actionRequest ?? {
+                          title: it.action!,
+                          description: it.text,
+                          confirmLabel: it.action!,
+                          successTitle: `${it.action} complete`,
+                          successDescription: "Your request has been recorded and the relevant team will be notified.",
+                          fields: [
+                            { type: "textarea", name: "notes", label: "Notes (optional)", placeholder: "Add any context for this action…" },
+                          ],
+                        }
+                      )
+                }
+              >
                 {it.action}
               </Btn>
             )}
