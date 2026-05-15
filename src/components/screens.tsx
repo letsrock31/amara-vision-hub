@@ -1255,8 +1255,10 @@ export function SecondarySales() {
           <div className="stat-label mb-3">Dealer activity by region</div>
           <div className="space-y-2">
             {REGIONS.map((r) => (
-              <div key={r.name} className="flex items-center justify-between py-2"
-                style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <div key={r.name}
+                onClick={() => setRegionDetail(r.name)}
+                className="flex items-center justify-between py-2 hover:bg-[#F9FAFB] rounded px-1 -mx-1"
+                style={{ borderBottom: "1px solid #E5E7EB", cursor: "pointer" }}>
                 <div className="flex items-center gap-2">
                   <span style={{
                     width: 8, height: 8, borderRadius: "50%",
