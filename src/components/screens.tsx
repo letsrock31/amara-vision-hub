@@ -2586,6 +2586,10 @@ export function PlaceReleaseOrder() {
   const [instructions, setInstructions] = useState<string>(draftReleaseOrder?.instructions ?? "");
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState<{ ro: string; eta: string; remaining: number } | null>(null);
+  const [customSites, setCustomSites] = useState<{ id: string; name: string }[]>([]);
+  const [showNewSite, setShowNewSite] = useState(false);
+  const [newSiteName, setNewSiteName] = useState("");
+  const [newSiteAddr, setNewSiteAddr] = useState("");
 
   useEffect(() => {
     // Clear selectedContractId once consumed
@@ -2612,6 +2616,21 @@ export function PlaceReleaseOrder() {
           <div style={{ fontSize: 13, color: "#4B5563", marginTop: 4 }}>
             Contract remaining balance: <strong style={{ color: "#0A0A0F" }}>{confirmed.remaining} units</strong>
           </div>
+          <div className="mt-8 text-left max-w-md mx-auto">
+            <div className="stat-label mb-3">What Happens Next</div>
+            <div className="space-y-3">
+              {[
+                "Your release order has been sent to the Amara Raja warehouse. Processing begins within 4 business hours.",
+                "Our logistics partner will pick up from the warehouse and send you a tracking reference within 24 hours.",
+                "Batteries will be delivered to your site by the requested date. Our field team will coordinate installation if needed.",
+              ].map((txt, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#534AB7", color: "#FFFFFF", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</div>
+                  <div style={{ fontSize: 13, color: "#374151", paddingTop: 4 }}>{txt}</div>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="mt-6">
             <Btn onClick={() => setView("contracts")}>Back to My Contracts</Btn>
           </div>
@@ -2624,6 +2643,7 @@ export function PlaceReleaseOrder() {
   const total = qty * contract.rate + surcharge;
   const baseEta = new Date(new Date(date).getTime() + 3 * 86400000);
   const etaDate = (urgent ? new Date(new Date(date).getTime() + 1 * 86400000) : baseEta).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const siteName = [...SITES.map((s) => ({ id: s.id, name: s.name })), ...customSites].find((s) => s.id === site)?.name ?? site;
 
   return (
     <div>
@@ -2661,8 +2681,21 @@ export function PlaceReleaseOrder() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="stat-label block mb-1">Delivery Site</label>
-              <select value={site} onChange={(e) => setSite(e.target.value)} className="w-full" style={inputStyle}>
+              <select
+                value={site}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") {
+                    setShowNewSite(true);
+                  } else {
+                    setSite(e.target.value);
+                  }
+                }}
+                className="w-full"
+                style={inputStyle}
+              >
                 {SITES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {customSites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                <option value="__new__">+ Add New Site</option>
               </select>
             </div>
             <div>
@@ -2670,6 +2703,53 @@ export function PlaceReleaseOrder() {
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full" style={inputStyle} />
             </div>
           </div>
+          {showNewSite && (
+            <div style={{ border: "1px solid #E5E7EB", borderRadius: 8, padding: 12, background: "#FAFAFB" }}>
+              <div className="stat-label mb-2">New Delivery Site</div>
+              <div className="space-y-2">
+                <input
+                  placeholder="Site Name"
+                  value={newSiteName}
+                  onChange={(e) => setNewSiteName(e.target.value)}
+                  className="w-full"
+                  style={inputStyle}
+                />
+                <input
+                  placeholder="Full Address"
+                  value={newSiteAddr}
+                  onChange={(e) => setNewSiteAddr(e.target.value)}
+                  className="w-full"
+                  style={inputStyle}
+                />
+                <div className="flex gap-2">
+                  <Btn
+                    type="button"
+                    onClick={() => {
+                      if (!newSiteName.trim()) return;
+                      const id = "SITE-" + Math.floor(100 + Math.random() * 900);
+                      setCustomSites((prev) => [...prev, { id, name: newSiteName + " — " + newSiteAddr }]);
+                      setSite(id);
+                      setNewSiteName("");
+                      setNewSiteAddr("");
+                      setShowNewSite(false);
+                    }}
+                  >
+                    Save Site
+                  </Btn>
+                  <Btn
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowNewSite(false);
+                      if (site === "__new__") setSite(SITES[0].id);
+                    }}
+                  >
+                    Cancel
+                  </Btn>
+                </div>
+              </div>
+            </div>
+          )}
           <div>
             <label className="stat-label block mb-1">Quantity</label>
             <input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} className="w-full" style={inputStyle} />
@@ -2730,7 +2810,7 @@ export function PlaceReleaseOrder() {
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Contract ID</span><span style={{ fontWeight: 600 }}>{contract.id}</span></div>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{contract.product}</span></div>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Quantity</span><span style={{ fontWeight: 600 }}>{qty} units</span></div>
-              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery Site</span><span style={{ fontWeight: 600 }}>{SITES.find((s) => s.id === site)?.name}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery Site</span><span style={{ fontWeight: 600 }}>{siteName}</span></div>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Requested Date</span><span style={{ fontWeight: 600 }}>{date}</span></div>
               <div className="flex justify-between pt-2 mt-1" style={{ borderTop: "1px solid #E5E7EB", fontWeight: 700 }}>
                 <span>Total Value</span><span>{fmtINRLakh(total)}</span>
