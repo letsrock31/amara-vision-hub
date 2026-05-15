@@ -809,6 +809,7 @@ type PosBatch = { id: string; date: string; customer: string; phone: string; lin
 
 export function POSEntry() {
   const today = new Date().toISOString().slice(0, 10);
+  const { showLowStockBanner, setShowLowStockBanner } = useApp();
   const [batches, setBatches] = useState<PosBatch[]>([
     { id: "POS-1", date: today, customer: "Walk-in", phone: "", lines: [{ sku: "Amaron Pro 35Ah 4W", qty: 2, vehicle: "Car" }], notes: "" },
   ]);
@@ -819,6 +820,11 @@ export function POSEntry() {
   const [lines, setLines] = useState<PosLine[]>([
     { sku: PRODUCTS[0].name, qty: 1, vehicle: "Car" },
   ]);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editCustomer, setEditCustomer] = useState("");
+  const [editPhone, setEditPhone] = useState("");
 
   const addLine = () => setLines([...lines, { sku: PRODUCTS[0].name, qty: 1, vehicle: "Car" }]);
   const removeLine = (i: number) => setLines(lines.filter((_, idx) => idx !== i));
@@ -832,11 +838,73 @@ export function POSEntry() {
     toast.success("Sales batch logged");
   };
 
+  const startEdit = (b: PosBatch) => { setEditId(b.id); setEditCustomer(b.customer); setEditPhone(b.phone); };
+  const saveEdit = (id: string) => {
+    setBatches(batches.map((b) => b.id === id ? { ...b, customer: editCustomer || "Walk-in", phone: editPhone } : b));
+    setEditId(null);
+    toast.success("Batch updated");
+  };
+  const confirmDelete = (id: string) => {
+    setBatches(batches.filter((b) => b.id !== id));
+    setDeleteId(null);
+    toast.success("Batch deleted");
+  };
+
   const inputStyle = { border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF", padding: "8px 10px", borderRadius: 6 } as const;
+  const chartData = [{ d: "Mon", v: 18 }, { d: "Tue", v: 22 }, { d: "Wed", v: 15 }, { d: "Thu", v: 12 }, { d: "Fri", v: 17 }];
+  const maxV = 22;
 
   return (
     <div>
+      {showLowStockBanner && (
+        <div className="rounded-lg p-3 mb-4 flex items-start gap-3" style={{ background: "#14142A", border: "1px solid #3A3470" }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#A78BFA", marginTop: 6, flexShrink: 0 }} />
+          <div className="flex-1" style={{ fontSize: 13, color: "#E5E7FF" }}>
+            <b>Low stock detected:</b> Amaron Pro 35Ah and Powerzone 45Ah may stock out within 9 to 12 days based on your current sell rate. Log your sales below to keep your forecast accurate.
+          </div>
+          <button onClick={() => setShowLowStockBanner(false)} aria-label="Close"><X size={16} color="#E5E7FF" /></button>
+        </div>
+      )}
       <PageHeader title="POS Entry" sub="Log today's secondary sales for Cogniq forecasting" />
+      <div className="flex justify-end mb-3">
+        <Btn variant="ghost" size="sm" onClick={() => setShowAnalytics((s) => !s)}>
+          <BarChart2 size={14} style={{ display: "inline", marginRight: 4 }} /> Sales Analytics
+        </Btn>
+      </div>
+      {showAnalytics && (
+        <div className="card-base mb-4">
+          <div className="flex justify-between items-start mb-3">
+            <div className="stat-label">Sales Analytics</div>
+            <Btn variant="ghost" size="sm" onClick={() => setShowAnalytics(false)}>Collapse</Btn>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div style={{ fontSize: 11, color: "#6B7280" }}>Best Seller this month</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>Amaron Hi-Life 2.5Ah</div>
+              <div style={{ fontSize: 12, color: "#4B5563" }}>2,120 units</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div style={{ fontSize: 11, color: "#6B7280" }}>This week</div>
+              <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>84</div>
+              <div style={{ fontSize: 12, color: "#4B5563" }}>units</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div style={{ fontSize: 11, color: "#6B7280" }}>Daily avg</div>
+              <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>16.8</div>
+              <div style={{ fontSize: 12, color: "#4B5563" }}>units</div>
+            </div>
+          </div>
+          <div className="flex items-end gap-3" style={{ height: 160 }}>
+            {chartData.map((c) => (
+              <div key={c.d} className="flex-1 flex flex-col items-center justify-end">
+                <div style={{ fontSize: 11, color: "#4B5563", marginBottom: 4 }}>{c.v}</div>
+                <div style={{ width: "100%", background: "#C00000", borderRadius: "4px 4px 0 0", height: `${(c.v / maxV) * 120}px` }} />
+                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>{c.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <AISuggestions
         items={[
           { text: "Logging POS daily improves your demand forecast accuracy by 22%. You're on a 4-day streak.", action: "Continue" },
@@ -890,27 +958,75 @@ export function POSEntry() {
         </div>
 
         <div className="card-base p-0 overflow-x-auto">
-          <div className="px-4 pt-4 stat-label">Today's batches ({batches.length})</div>
+          <div className="px-4 pt-4 flex justify-between items-center">
+            <div className="stat-label">Today's batches ({batches.length})</div>
+            <Btn variant="ghost" size="sm" onClick={() => toast.success("Downloading POS_Log_May2026.csv")}>
+              <Download size={12} style={{ display: "inline", marginRight: 4 }} /> Export CSV
+            </Btn>
+          </div>
           <table className="w-full mt-3" style={{ fontSize: 13 }}>
             <thead>
               <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
                 <th className="py-2 px-4">Batch</th><th className="py-2 px-4">Customer</th>
-                <th className="py-2 px-4">Items</th><th className="py-2 px-4">Total Qty</th>
+                <th className="py-2 px-4">Items</th><th className="py-2 px-4">Qty</th>
+                <th className="py-2 px-4"></th>
               </tr>
             </thead>
             <tbody>
-              {batches.map((b) => (
-                <tr key={b.id} style={{ borderTop: "1px solid #E5E7EB" }}>
-                  <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.id}</td>
-                  <td className="py-2.5 px-4">{b.customer}{b.phone && <div style={{ fontSize: 11, color: "#6B7280" }}>{b.phone}</div>}</td>
-                  <td className="py-2.5 px-4" style={{ fontSize: 12 }}>
-                    {b.lines.map((l, i) => (
-                      <div key={i}>{l.sku} ×{l.qty} <span style={{ color: "#6B7280" }}>({l.vehicle})</span></div>
-                    ))}
-                  </td>
-                  <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.lines.reduce((s, l) => s + l.qty, 0)}</td>
-                </tr>
-              ))}
+              {batches.map((b) => {
+                if (deleteId === b.id) {
+                  return (
+                    <tr key={b.id} style={{ borderTop: "1px solid #E5E7EB", background: "#FEF2F2" }}>
+                      <td className="py-2.5 px-4" colSpan={5}>
+                        <div className="flex items-center justify-between gap-3">
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>Delete this entry?</span>
+                          <div className="flex gap-2">
+                            <Btn size="sm" onClick={() => confirmDelete(b.id)}>Yes</Btn>
+                            <Btn variant="ghost" size="sm" onClick={() => setDeleteId(null)}>No</Btn>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+                if (editId === b.id) {
+                  return (
+                    <tr key={b.id} style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+                      <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.id}</td>
+                      <td className="py-2.5 px-4">
+                        <input value={editCustomer} onChange={(e) => setEditCustomer(e.target.value)} placeholder="Customer" style={{ ...inputStyle, padding: "4px 8px" }} className="w-full mb-1" />
+                        <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Phone" style={{ ...inputStyle, padding: "4px 8px" }} className="w-full" />
+                      </td>
+                      <td className="py-2.5 px-4" style={{ fontSize: 12 }}>{b.lines.map((l) => `${l.sku} ×${l.qty}`).join(", ")}</td>
+                      <td className="py-2.5 px-4">{b.lines.reduce((s, l) => s + l.qty, 0)}</td>
+                      <td className="py-2.5 px-4">
+                        <div className="flex gap-1">
+                          <Btn size="sm" onClick={() => saveEdit(b.id)}>Save</Btn>
+                          <Btn variant="ghost" size="sm" onClick={() => setEditId(null)}>Cancel</Btn>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+                return (
+                  <tr key={b.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.id}</td>
+                    <td className="py-2.5 px-4">{b.customer}{b.phone && <div style={{ fontSize: 11, color: "#6B7280" }}>{b.phone}</div>}</td>
+                    <td className="py-2.5 px-4" style={{ fontSize: 12 }}>
+                      {b.lines.map((l, i) => (
+                        <div key={i}>{l.sku} ×{l.qty} <span style={{ color: "#6B7280" }}>({l.vehicle})</span></div>
+                      ))}
+                    </td>
+                    <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.lines.reduce((s, l) => s + l.qty, 0)}</td>
+                    <td className="py-2.5 px-4">
+                      <div className="flex gap-2">
+                        <button onClick={() => startEdit(b)} aria-label="Edit"><Pencil size={14} color="#4B5563" /></button>
+                        <button onClick={() => setDeleteId(b.id)} aria-label="Delete"><Trash2 size={14} color="#C00000" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
