@@ -2620,8 +2620,10 @@ export function PlaceReleaseOrder() {
     );
   }
 
-  const total = qty * contract.rate;
-  const etaDate = new Date(new Date(date).getTime() + 3 * 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const surcharge = urgent ? 5000 : 0;
+  const total = qty * contract.rate + surcharge;
+  const baseEta = new Date(new Date(date).getTime() + 3 * 86400000);
+  const etaDate = (urgent ? new Date(new Date(date).getTime() + 1 * 86400000) : baseEta).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
   return (
     <div>
