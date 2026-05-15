@@ -2643,6 +2643,7 @@ export function PlaceReleaseOrder() {
   const total = qty * contract.rate + surcharge;
   const baseEta = new Date(new Date(date).getTime() + 3 * 86400000);
   const etaDate = (urgent ? new Date(new Date(date).getTime() + 1 * 86400000) : baseEta).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const siteName = [...SITES.map((s) => ({ id: s.id, name: s.name })), ...customSites].find((s) => s.id === site)?.name ?? site;
 
   return (
     <div>
@@ -2809,7 +2810,7 @@ export function PlaceReleaseOrder() {
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Contract ID</span><span style={{ fontWeight: 600 }}>{contract.id}</span></div>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{contract.product}</span></div>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Quantity</span><span style={{ fontWeight: 600 }}>{qty} units</span></div>
-              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery Site</span><span style={{ fontWeight: 600 }}>{SITES.find((s) => s.id === site)?.name}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery Site</span><span style={{ fontWeight: 600 }}>{siteName}</span></div>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Requested Date</span><span style={{ fontWeight: 600 }}>{date}</span></div>
               <div className="flex justify-between pt-2 mt-1" style={{ borderTop: "1px solid #E5E7EB", fontWeight: 700 }}>
                 <span>Total Value</span><span>{fmtINRLakh(total)}</span>
