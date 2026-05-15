@@ -1421,9 +1421,18 @@ function ScheduleVisitModal({ dealer, onClose }: { dealer: { name: string; city:
 }
 
 export function RSMDashboard() {
+  const { setView, setDealerOrdersFilter } = useApp();
   const [visitDealer, setVisitDealer] = useState<typeof RSM_DEALERS[number] | null>(null);
+  const [posDealer, setPosDealer] = useState<typeof RSM_DEALERS[number] | null>(null);
   const [priorityIds, setPriorityIds] = useState<string[]>([]);
   const togglePriority = (id: string) => setPriorityIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
+  const posSample = [
+    { date: "14 May 2026", product: "Amaron Pro 35Ah", qty: 4 },
+    { date: "12 May 2026", product: "Amaron Pro 35Ah", qty: 2 },
+    { date: "09 May 2026", product: "Amaron Hi-Life 2.5Ah", qty: 6 },
+    { date: "06 May 2026", product: "Powerzone 45Ah", qty: 3 },
+    { date: "03 May 2026", product: "Amaron Pro 35Ah", qty: 5 },
+  ];
 
   return (
     <div>
