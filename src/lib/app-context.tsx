@@ -29,6 +29,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     else setView("dashboard");
   };
 
+  const addToCart = (item: CartItem) => {
+    setCart((prev) => {
+      const exists = prev.find((c) => c.id === item.id);
+      if (exists) return prev.map((c) => c.id === item.id ? { ...c, qty: c.qty + item.qty } : c);
+      return [...prev, item];
+    });
+  };
+
   return <Ctx.Provider value={{ profile, setProfile, view, setView, cart, setCart }}>{children}</Ctx.Provider>;
 }
 
