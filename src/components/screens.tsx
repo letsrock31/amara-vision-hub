@@ -2576,12 +2576,14 @@ export function MyContracts() {
 /* =================== INDUSTRIAL CUSTOMER: PLACE RELEASE ORDER =================== */
 export function PlaceReleaseOrder() {
   const mine = CONTRACTS.filter((c) => c.customer === "Indus Towers");
-  const { setView, selectedContractId, setSelectedContractId, addReleaseOrder } = useApp();
-  const initialId = selectedContractId && mine.find((c) => c.id === selectedContractId) ? selectedContractId : mine[0].id;
+  const { setView, selectedContractId, setSelectedContractId, addReleaseOrder, draftReleaseOrder, setDraftReleaseOrder, addNotification } = useApp();
+  const initialId = (draftReleaseOrder?.contractId) || (selectedContractId && mine.find((c) => c.id === selectedContractId) ? selectedContractId : mine[0].id);
   const [contractId, setContractId] = useState(initialId);
-  const [qty, setQty] = useState(10);
-  const [site, setSite] = useState(SITES[0].id);
-  const [date, setDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
+  const [qty, setQty] = useState(draftReleaseOrder?.qty ?? 10);
+  const [site, setSite] = useState(draftReleaseOrder?.site ?? SITES[0].id);
+  const [date, setDate] = useState(draftReleaseOrder?.date ?? new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
+  const [urgent, setUrgent] = useState<boolean>(draftReleaseOrder?.urgent ?? false);
+  const [instructions, setInstructions] = useState<string>(draftReleaseOrder?.instructions ?? "");
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState<{ ro: string; eta: string; remaining: number } | null>(null);
 
