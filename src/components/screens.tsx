@@ -569,6 +569,7 @@ export function DealerOrdersAdmin() {
 
 /* =================== ADMIN/RSM: SECONDARY SALES =================== */
 export function SecondarySales() {
+  const { openAction } = useApp();
   const max = Math.max(...SKU_SELLTHROUGH.map((s) => s.units));
   return (
     <div>
@@ -950,6 +951,7 @@ export function IAMFleetHealth() {
   const [search, setSearch] = useState("");
   const [customer, setCustomer] = useState("All");
   const [page, setPage] = useState(1);
+  const { openAction } = useApp();
 
   const customers = useMemo(() => Array.from(new Set(ALL_FLEET_SITES.map((s) => s.customer))), []);
   const filtered = ALL_FLEET_SITES.filter((s) =>
@@ -1238,6 +1240,7 @@ export function PlaceReleaseOrder() {
 export function AllContracts() {
   const [search, setSearch] = useState("");
   const [customer, setCustomer] = useState("All");
+  const { openAction } = useApp();
   const customers = useMemo(() => Array.from(new Set(CONTRACTS.map((c) => c.customer))), []);
 
   const daysToExpiry = (end: string) => {
