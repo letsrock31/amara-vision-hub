@@ -644,7 +644,22 @@ export function SecondarySales() {
                 <td className="py-3 px-4"><span className="badge-risk" style={{ padding: "3px 10px", borderRadius: 999, fontSize: 11 }}>{a.days} days</span></td>
                 <td className="py-3 px-4">{a.current}</td>
                 <td className="py-3 px-4" style={{ fontWeight: 600 }}>{a.reorder}</td>
-                <td className="py-3 px-4"><Btn size="sm" onClick={() => toast.success(`Alert sent to ${a.dealer}`)}>Alert Dealer</Btn></td>
+                <td className="py-3 px-4"><Btn size="sm" onClick={() => openAction({
+                  title: `Alert ${a.dealer}`,
+                  description: `Stock-out predicted in ${a.days} days for ${a.sku}`,
+                  summary: [
+                    { label: "Region", value: a.region },
+                    { label: "Current Stock", value: String(a.current) },
+                    { label: "Recommended Reorder", value: String(a.reorder) + " units" },
+                  ],
+                  fields: [
+                    { type: "select", name: "channel", label: "Send via", options: ["WhatsApp", "Email", "SMS", "All channels"] },
+                    { type: "textarea", name: "msg", label: "Message", defaultValue: `Hi ${a.dealer}, your ${a.sku} stock will run out in ${a.days} days. Recommended reorder: ${a.reorder} units.` },
+                  ],
+                  confirmLabel: "Send Alert",
+                  successTitle: "Alert sent",
+                  successDescription: `${a.dealer} has been notified to reorder ${a.reorder} units of ${a.sku}.`,
+                })}>Alert Dealer</Btn></td>
               </tr>
             ))}
           </tbody>
@@ -989,7 +1004,22 @@ export function IAMFleetHealth() {
                 <td className="py-3 px-4"><StatusBadge status={s.status} /></td>
                 <td className="py-3 px-4">{s.days}</td>
                 <td className="py-3 px-4"><StatusBadge status={s.risk} /></td>
-                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => toast.message(`${s.site}`, { description: `${s.customer} · ${s.units} units · ${s.status}` })}>View</Btn></td>
+                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
+                  title: `${s.site} — ${s.customer}`,
+                  description: `${s.location} · ${s.units} units`,
+                  summary: [
+                    { label: "Status", value: s.status },
+                    { label: "Risk", value: s.risk },
+                    { label: "Days since inspection", value: String(s.days) },
+                  ],
+                  fields: [
+                    { type: "select", name: "type", label: "Action", options: ["Schedule Inspection", "Raise Replacement Order", "Assign Engineer"] },
+                    { type: "date", name: "when", label: "Target date", defaultValue: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10) },
+                    { type: "textarea", name: "notes", label: "Notes" },
+                  ],
+                  confirmLabel: "Confirm",
+                  successTitle: "Action scheduled",
+                })}>View</Btn></td>
               </tr>
             ))}
           </tbody>
@@ -1259,7 +1289,23 @@ export function AllContracts() {
                   <td className="py-3 px-4">{c.consumed}</td>
                   <td className="py-3 px-4" style={{ fontWeight: 600 }}>{c.remaining}</td>
                   <td className="py-3 px-4" style={{ color, fontWeight: 600 }}>{c.end} ({days}d)</td>
-                  <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => toast.message(`${c.id}`, { description: `${c.customer} · ${c.product} · ${c.remaining} units left` })}>Manage</Btn></td>
+                  <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
+                    title: `Manage ${c.id}`,
+                    description: `${c.customer} · ${c.product}`,
+                    summary: [
+                      { label: "Total", value: String(c.total) },
+                      { label: "Consumed", value: String(c.consumed) },
+                      { label: "Remaining", value: String(c.remaining) },
+                      { label: "Rate", value: fmtINR(c.rate) + "/unit" },
+                      { label: "Expiry", value: c.end },
+                    ],
+                    fields: [
+                      { type: "select", name: "act", label: "Action", options: ["Draft Renewal", "Schedule Review", "Adjust Quantity", "Flag for Audit"] },
+                      { type: "textarea", name: "comment", label: "Comment" },
+                    ],
+                    confirmLabel: "Submit",
+                    successTitle: "Contract action recorded",
+                  })}>Manage</Btn></td>
                 </tr>
               );
             })}
