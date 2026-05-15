@@ -79,6 +79,7 @@ function App() {
       </main>
       <MobileBottomNav />
       <Cogniq key={profile ?? "login"} />
+      <ActionModal />
     </div>
   );
 }
