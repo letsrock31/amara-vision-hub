@@ -98,8 +98,8 @@ export function Cogniq() {
                   className="px-3 py-2 rounded-lg max-w-[85%]"
                   style={{
                     fontSize: 12,
-                    background: m.role === "user" ? "#2E0D0D" : "#14142A",
-                    color: m.role === "user" ? "#c00000" : "#534ab7",
+                    background: m.role === "user" ? "#2E0D0D" : "#1A1A3A",
+                    color: m.role === "user" ? "#C00000" : "#AFA9EC",
                     border: m.role === "ai" ? "1px solid #3A3470" : "none",
                   }}
                 >
