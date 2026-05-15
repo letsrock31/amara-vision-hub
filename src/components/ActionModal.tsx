@@ -37,7 +37,6 @@ export function ActionModal() {
       <div className="absolute inset-0 bg-black/50" />
       <div
         className="relative bg-white w-full max-w-lg rounded-xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
         style={{ border: "1px solid #E5E7EB", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
       >
         <div className="flex justify-between items-start px-5 py-4" style={{ borderBottom: "1px solid #E5E7EB", background: "#EEF0FF" }}>
