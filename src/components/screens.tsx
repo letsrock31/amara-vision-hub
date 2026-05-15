@@ -943,7 +943,8 @@ export function DealerOrdersAdmin() {
         </table>
       </div>
       <Pagination page={page} totalPages={totalPages} onPage={setPage} />
-      {drawerOrder && <OrderDetailDrawer order={drawerOrder} onClose={() => setDrawerOrder(null)} />}
+      {drawerOrder && <OrderDetailDrawer order={drawerOrder} onClose={() => setDrawerOrder(null)} onEscalate={() => setEscalateId(drawerOrder.id)} />}
+      {escalateId && <EscalateModal refId={escalateId} kind="Order" onClose={() => setEscalateId(null)} />}
     </div>
   );
 }
