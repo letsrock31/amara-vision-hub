@@ -623,7 +623,7 @@ export function MyOrders() {
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               );
             })}
           </tbody>
