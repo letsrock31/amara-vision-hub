@@ -55,7 +55,7 @@ function App() {
       if (view === "contracts") return <MyContracts />;
       if (view === "release-order") return <PlaceReleaseOrder />;
     }
-    return <div>Coming soon</div>;
+    return <ComingSoon />;
   })();
 
   return (
