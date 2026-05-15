@@ -139,7 +139,7 @@ export function Cogniq() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Cogniq anything..."
                 className="flex-1 px-3 py-2 rounded-md outline-none"
-                style={{ border: "1px solid #3A3470", fontSize: 12, background: "#1A1A1A" }}
+                style={{ border: "1px solid #3A3470", fontSize: 12, background: "#1A1A1A", color: "#FFFFFF" }}
               />
               <button
                 type="submit"
