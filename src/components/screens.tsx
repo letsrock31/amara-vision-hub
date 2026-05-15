@@ -7,7 +7,7 @@ import {
 } from "@/lib/mock-data";
 import { useApp, type CartItem, type DealerOrder } from "@/lib/app-context";
 import { StatCard, StatusBadge, PageHeader, AISuggestions, Btn, FilterBar, Pagination } from "./ui-bits";
-import { Search, ShoppingCart, X, Plus, Minus, ArrowRight, Trash2, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, Phone, Mail, RefreshCw, Receipt, MessageSquare } from "lucide-react";
+import { Search, ShoppingCart, X, Plus, Minus, ArrowRight, Trash2, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, Phone, Mail, RefreshCw, Receipt, MessageSquare, BarChart2, Pencil, Download } from "lucide-react";
 import { ProductDetailModal, TrackOrderModal, InvoicePanel, ComplaintModal, EscalateModal, ContactDealerCard, StarRating } from "./shared";
 
 const PAGE_SIZE = 8;
@@ -132,6 +132,9 @@ function SuccessBanner({ text, onClose }: { text: string; onClose?: () => void }
 /* =================== DEALER: HOME =================== */
 export function DealerHome() {
   const { setView, addToCart, setPendingOrdersFilter, setShowLowStockBanner } = useApp();
+  const [schemeOpen, setSchemeOpen] = useState(false);
+  const [msgOpen, setMsgOpen] = useState(false);
+  const [msgBody, setMsgBody] = useState("");
   const reorderNow = () => {
     addToCart({ id: "P1", name: "Amaron Pro 35Ah 4W", price: 4200, qty: 40 });
     setView("catalog");
@@ -184,6 +187,92 @@ export function DealerHome() {
           </div>
         </div>
       </div>
+
+      <div className="card-base mt-4" style={{ borderTop: "3px solid #534AB7" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#534AB7", letterSpacing: 0.5 }}>ACTIVE SCHEME</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>Q2 Dealer Excellence Scheme</div>
+        <div className="flex flex-wrap gap-4 mt-2" style={{ fontSize: 13, color: "#4B5563" }}>
+          <span>Target: <b style={{ color: "#0A0A0F" }}>80 units</b></span>
+          <span>Achieved: <b style={{ color: "#0A0A0F" }}>54 units</b></span>
+          <span>Reward: <b style={{ color: "#0A0A0F" }}>+2.5% margin</b></span>
+        </div>
+        <div className="h-2 rounded-full mt-3" style={{ background: "#E5E7EB" }}>
+          <div className="h-full rounded-full" style={{ width: "67%", background: "#534AB7" }} />
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <span style={{ fontSize: 12, color: "#6B7280" }}>Scheme ends 31 May 2026</span>
+          <Btn variant="ghost" size="sm" onClick={() => setSchemeOpen(true)}>View Scheme Details</Btn>
+        </div>
+      </div>
+
+      <div className="card-base mt-4" style={{ borderLeft: "3px solid #00A651" }}>
+        <div className="stat-label">Your Dealer Sales Representative</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Rajiv Menon</div>
+        <div className="flex items-center gap-2 mt-2" style={{ fontSize: 13, color: "#4B5563" }}>
+          <Phone size={14} /> +91 98100 44321
+        </div>
+        <div className="flex items-center gap-2 mt-1" style={{ fontSize: 13, color: "#4B5563" }}>
+          <Mail size={14} /> rajiv.menon@amararaja.com
+        </div>
+        <div className="flex gap-2 mt-3">
+          <Btn variant="ghost" size="sm" onClick={() => toast.success("Calling Rajiv Menon...")}>Call Now</Btn>
+          <Btn variant="ghost" size="sm" onClick={() => setMsgOpen(true)}>Send Message</Btn>
+        </div>
+      </div>
+
+      {schemeOpen && (
+        <CenterModal widthClass="max-w-lg">
+          <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Q2 Dealer Excellence Scheme</h3>
+            <button onClick={() => setSchemeOpen(false)} aria-label="Close"><X size={18} /></button>
+          </div>
+          <div className="p-5 overflow-y-auto" style={{ flex: 1 }}>
+            <p style={{ fontSize: 13, color: "#4B5563" }}>Earn additional margin credits based on monthly unit sales across all Amara Raja SKUs.</p>
+            <div className="rounded-lg overflow-hidden mt-4" style={{ border: "1px solid #E5E7EB" }}>
+              <table className="w-full" style={{ fontSize: 13 }}>
+                <thead style={{ background: "#F9FAFB" }}>
+                  <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                    <th className="py-2 px-3">Tier</th><th className="py-2 px-3">Target</th><th className="py-2 px-3">Reward</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderTop: "1px solid #E5E7EB" }}><td className="py-2 px-3">Tier 1</td><td className="py-2 px-3">50 units</td><td className="py-2 px-3">+1.5% margin</td></tr>
+                  <tr style={{ borderTop: "1px solid #E5E7EB", background: "#EEF0FF" }}><td className="py-2 px-3" style={{ fontWeight: 700 }}>Tier 2 (current)</td><td className="py-2 px-3">80 units</td><td className="py-2 px-3">+2.5% margin</td></tr>
+                  <tr style={{ borderTop: "1px solid #E5E7EB" }}><td className="py-2 px-3">Tier 3</td><td className="py-2 px-3">120 units</td><td className="py-2 px-3">+4% margin</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4" style={{ fontSize: 13 }}>Your Standing: <b>Rank 3 of 12 NCR dealers</b></div>
+            <div style={{ fontSize: 12, color: "#6B7280", marginTop: 4 }}>Scheme valid: 01 Apr 2026 to 31 May 2026</div>
+          </div>
+          <div className="px-5 py-3 flex justify-end" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+            <Btn size="sm" onClick={() => setSchemeOpen(false)}>Close</Btn>
+          </div>
+        </CenterModal>
+      )}
+
+      {msgOpen && (
+        <CenterModal widthClass="max-w-md">
+          <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Message Your DSR</h3>
+            <button onClick={() => setMsgOpen(false)} aria-label="Close"><X size={18} /></button>
+          </div>
+          <div className="p-5 space-y-3">
+            <div>
+              <label className="stat-label block mb-1">Subject</label>
+              <input readOnly value="Query from Sharma Auto Parts" className="w-full px-3 py-2 rounded-md" style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#F3F4F6" }} />
+            </div>
+            <div>
+              <label className="stat-label block mb-1">Your message</label>
+              <textarea value={msgBody} onChange={(e) => setMsgBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-md" style={{ border: "1px solid #D1D5DB", fontSize: 13 }} />
+            </div>
+          </div>
+          <div className="px-5 py-3 flex justify-end gap-2" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+            <Btn variant="ghost" size="sm" onClick={() => setMsgOpen(false)}>Cancel</Btn>
+            <Btn size="sm" onClick={() => { setMsgOpen(false); setMsgBody(""); toast.success("Message sent to Rajiv Menon"); }}>Send</Btn>
+          </div>
+        </CenterModal>
+      )}
     </div>
   );
 }
@@ -332,10 +421,12 @@ export function ProductCatalog() {
 function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
   cart: CartItem[]; total: number;
   onCancel: () => void;
-  onConfirm: (deliveryDate: string) => void;
+  onConfirm: (deliveryDate: string, urgent: boolean, finalTotal: number) => void;
 }) {
   const defaultDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
   const [date, setDate] = useState(defaultDate);
+  const [urgent, setUrgent] = useState(false);
+  const grand = total + (urgent ? 250 : 0);
   return (
     <CenterModal widthClass="max-w-2xl">
       <div className="px-5 py-4" style={{ borderBottom: "1px solid #E5E7EB", background: "#EEF0FF" }}>
@@ -352,7 +443,7 @@ function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
             style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#F3F4F6" }}
           />
         </div>
-        <div className="mb-4">
+        <div className="mb-3">
           <label className="stat-label block mb-1">Preferred Delivery Date</label>
           <input
             type="date"
@@ -362,6 +453,13 @@ function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
             className="w-full px-3 py-2 rounded-md"
             style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF" }}
           />
+        </div>
+        <label className="flex items-center gap-2 mb-1" style={{ fontSize: 13 }}>
+          <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+          Request Urgent Delivery (+₹250)
+        </label>
+        <div className="mb-4" style={{ fontSize: 12, color: urgent ? "#15803D" : "#6B7280", fontWeight: 600 }}>
+          {urgent ? "Estimated: Next day delivery" : "Estimated: 3 business days"}
         </div>
         <div className="rounded-lg overflow-hidden" style={{ border: "1px solid #E5E7EB" }}>
           <table className="w-full" style={{ fontSize: 13 }}>
@@ -380,9 +478,15 @@ function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
                   <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
                 </tr>
               ))}
+              {urgent && (
+                <tr style={{ borderTop: "1px solid #E5E7EB" }}>
+                  <td className="py-2 px-3" colSpan={2}>Urgency surcharge</td>
+                  <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 600 }}>{fmtINR(250)}</td>
+                </tr>
+              )}
               <tr style={{ background: "#F9FAFB", borderTop: "1px solid #E5E7EB" }}>
                 <td className="py-3 px-3" style={{ fontWeight: 700 }} colSpan={2}>Order Total</td>
-                <td className="py-3 px-3" style={{ textAlign: "right", fontWeight: 700, fontSize: 14 }}>{fmtINR(total)}</td>
+                <td className="py-3 px-3" style={{ textAlign: "right", fontWeight: 700, fontSize: 14 }}>{fmtINR(grand)}</td>
               </tr>
             </tbody>
           </table>
@@ -390,7 +494,7 @@ function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
       </div>
       <div className="px-5 py-3 flex justify-end gap-2" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
         <Btn variant="ghost" size="sm" onClick={onCancel}>Cancel</Btn>
-        <Btn size="sm" onClick={() => onConfirm(date)}>Confirm Order</Btn>
+        <Btn size="sm" onClick={() => onConfirm(date, urgent, grand)}>Confirm Order</Btn>
       </div>
     </CenterModal>
   );
@@ -400,25 +504,38 @@ export function CartPage() {
   const { cart, setCart, setView, addOrder } = useApp();
   const [confirming, setConfirming] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [promo, setPromo] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
   const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
   const gst = Math.round(subtotal * 0.18);
   const delivery = subtotal > 200000 ? 0 : 500;
-  const total = subtotal + gst + delivery;
+  const total = subtotal - promoDiscount + gst + delivery;
 
   const updateQty = (id: string, q: number) => {
     if (q <= 0) setCart(cart.filter((c) => c.id !== id));
     else setCart(cart.map((c) => c.id === id ? { ...c, qty: q } : c));
   };
 
-  const placeOrder = (deliveryDate: string) => {
+  const applyPromo = () => {
+    if (promo.trim().toUpperCase() === "DEALER20") {
+      setPromoDiscount(Math.round(subtotal * 0.05));
+      setPromoError("");
+    } else {
+      setPromoDiscount(0);
+      setPromoError("Invalid promo code");
+    }
+  };
+
+  const placeOrder = (deliveryDate: string, urgent: boolean, finalTotal: number) => {
     const id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
-    const eta = new Date(new Date(deliveryDate).getTime() + 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const eta = new Date(new Date(deliveryDate).getTime() + (urgent ? 86400000 : 86400000)).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
     const itemsStr = cart.map((c) => `${c.name} ×${c.qty}`).join(", ");
-    const order: DealerOrder = { id, date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }), items: itemsStr, total, status: "Processing", eta, cart: [...cart] };
+    const order: DealerOrder = { id, date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }), items: itemsStr, total: finalTotal, status: "Processing", eta, cart: [...cart] };
     addOrder(order);
     setCart([]);
     setConfirming(false);
-    setSuccess(`Order ${id} placed successfully. Estimated delivery: ${eta}`);
+    setSuccess(`Order ${id} placed successfully${urgent ? " (urgent)" : ""}. Estimated delivery: ${eta}`);
     setTimeout(() => setView("orders"), 1500);
   };
 
@@ -443,43 +560,62 @@ export function CartPage() {
       <PageHeader title="Your Cart" sub={`${cart.length} item${cart.length === 1 ? "" : "s"} · Review and proceed to checkout`} />
       {cart.length > 0 && (
         <div className="grid lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 card-base p-0">
-            <table className="w-full" style={{ fontSize: 13 }}>
-              <thead>
-                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
-                  <th className="py-3 px-4">Product</th>
-                  <th className="py-3 px-4">Price</th>
-                  <th className="py-3 px-4">Quantity</th>
-                  <th className="py-3 px-4">Total</th>
-                  <th className="py-3 px-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {cart.map((c) => (
-                  <tr key={c.id} style={{ borderTop: "1px solid #E5E7EB" }}>
-                    <td className="py-3 px-4" style={{ fontWeight: 500 }}>{c.name}</td>
-                    <td className="py-3 px-4">{fmtINR(c.price)}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center" style={{ border: "1px solid #D1D5DB", borderRadius: 6, width: "fit-content" }}>
-                        <button onClick={() => updateQty(c.id, c.qty - 1)} style={{ padding: "4px 8px" }}><Minus size={12} /></button>
-                        <span style={{ minWidth: 32, textAlign: "center" }}>{c.qty}</span>
-                        <button onClick={() => updateQty(c.id, c.qty + 1)} style={{ padding: "4px 8px" }}><Plus size={12} /></button>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
-                    <td className="py-3 px-4">
-                      <button onClick={() => updateQty(c.id, 0)} aria-label="Remove"><Trash2 size={16} color="#C00000" /></button>
-                    </td>
+          <div className="lg:col-span-2 space-y-3">
+            <div className="card-base p-0">
+              <table className="w-full" style={{ fontSize: 13 }}>
+                <thead>
+                  <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                    <th className="py-3 px-4">Product</th>
+                    <th className="py-3 px-4">Price</th>
+                    <th className="py-3 px-4">Quantity</th>
+                    <th className="py-3 px-4">Total</th>
+                    <th className="py-3 px-4"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {cart.map((c) => (
+                    <tr key={c.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                      <td className="py-3 px-4" style={{ fontWeight: 500 }}>{c.name}</td>
+                      <td className="py-3 px-4">{fmtINR(c.price)}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center" style={{ border: "1px solid #D1D5DB", borderRadius: 6, width: "fit-content" }}>
+                          <button onClick={() => updateQty(c.id, c.qty - 1)} style={{ padding: "4px 8px" }}><Minus size={12} /></button>
+                          <span style={{ minWidth: 32, textAlign: "center" }}>{c.qty}</span>
+                          <button onClick={() => updateQty(c.id, c.qty + 1)} style={{ padding: "4px 8px" }}><Plus size={12} /></button>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
+                      <td className="py-3 px-4">
+                        <button onClick={() => updateQty(c.id, 0)} aria-label="Remove"><Trash2 size={16} color="#C00000" /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="card-base">
+              <div className="flex gap-2 items-center">
+                <input
+                  value={promo}
+                  onChange={(e) => setPromo(e.target.value)}
+                  placeholder="Promo code"
+                  className="flex-1 px-3 py-2 rounded-md"
+                  style={{ border: "1px solid #D1D5DB", fontSize: 13 }}
+                />
+                <Btn size="sm" onClick={applyPromo}>Apply</Btn>
+              </div>
+              {promoError && <div style={{ fontSize: 12, color: "#C00000", marginTop: 6 }}>{promoError}</div>}
+              {promoDiscount > 0 && <div style={{ fontSize: 12, color: "#15803D", marginTop: 6, fontWeight: 600 }}>Promo applied: 5% off</div>}
+            </div>
           </div>
 
           <div className="card-base h-fit" style={{ borderTop: "3px solid #5B5BF5" }}>
             <div className="stat-label mb-3">Order Summary</div>
             <div className="space-y-2.5" style={{ fontSize: 14 }}>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Subtotal</span><span>{fmtINR(subtotal)}</span></div>
+              {promoDiscount > 0 && (
+                <div className="flex justify-between" style={{ color: "#15803D" }}><span>Discount (DEALER20)</span><span>−{fmtINR(promoDiscount)}</span></div>
+              )}
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>GST (18%)</span><span>{fmtINR(gst)}</span></div>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery</span><span>{delivery === 0 ? "FREE" : fmtINR(delivery)}</span></div>
               <div className="flex justify-between pt-3" style={{ borderTop: "1px solid #E5E7EB", fontSize: 16, fontWeight: 700 }}>
@@ -673,6 +809,7 @@ type PosBatch = { id: string; date: string; customer: string; phone: string; lin
 
 export function POSEntry() {
   const today = new Date().toISOString().slice(0, 10);
+  const { showLowStockBanner, setShowLowStockBanner } = useApp();
   const [batches, setBatches] = useState<PosBatch[]>([
     { id: "POS-1", date: today, customer: "Walk-in", phone: "", lines: [{ sku: "Amaron Pro 35Ah 4W", qty: 2, vehicle: "Car" }], notes: "" },
   ]);
@@ -683,6 +820,11 @@ export function POSEntry() {
   const [lines, setLines] = useState<PosLine[]>([
     { sku: PRODUCTS[0].name, qty: 1, vehicle: "Car" },
   ]);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editCustomer, setEditCustomer] = useState("");
+  const [editPhone, setEditPhone] = useState("");
 
   const addLine = () => setLines([...lines, { sku: PRODUCTS[0].name, qty: 1, vehicle: "Car" }]);
   const removeLine = (i: number) => setLines(lines.filter((_, idx) => idx !== i));
@@ -696,11 +838,73 @@ export function POSEntry() {
     toast.success("Sales batch logged");
   };
 
+  const startEdit = (b: PosBatch) => { setEditId(b.id); setEditCustomer(b.customer); setEditPhone(b.phone); };
+  const saveEdit = (id: string) => {
+    setBatches(batches.map((b) => b.id === id ? { ...b, customer: editCustomer || "Walk-in", phone: editPhone } : b));
+    setEditId(null);
+    toast.success("Batch updated");
+  };
+  const confirmDelete = (id: string) => {
+    setBatches(batches.filter((b) => b.id !== id));
+    setDeleteId(null);
+    toast.success("Batch deleted");
+  };
+
   const inputStyle = { border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF", padding: "8px 10px", borderRadius: 6 } as const;
+  const chartData = [{ d: "Mon", v: 18 }, { d: "Tue", v: 22 }, { d: "Wed", v: 15 }, { d: "Thu", v: 12 }, { d: "Fri", v: 17 }];
+  const maxV = 22;
 
   return (
     <div>
+      {showLowStockBanner && (
+        <div className="rounded-lg p-3 mb-4 flex items-start gap-3" style={{ background: "#14142A", border: "1px solid #3A3470" }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#A78BFA", marginTop: 6, flexShrink: 0 }} />
+          <div className="flex-1" style={{ fontSize: 13, color: "#E5E7FF" }}>
+            <b>Low stock detected:</b> Amaron Pro 35Ah and Powerzone 45Ah may stock out within 9 to 12 days based on your current sell rate. Log your sales below to keep your forecast accurate.
+          </div>
+          <button onClick={() => setShowLowStockBanner(false)} aria-label="Close"><X size={16} color="#E5E7FF" /></button>
+        </div>
+      )}
       <PageHeader title="POS Entry" sub="Log today's secondary sales for Cogniq forecasting" />
+      <div className="flex justify-end mb-3">
+        <Btn variant="ghost" size="sm" onClick={() => setShowAnalytics((s) => !s)}>
+          <BarChart2 size={14} style={{ display: "inline", marginRight: 4 }} /> Sales Analytics
+        </Btn>
+      </div>
+      {showAnalytics && (
+        <div className="card-base mb-4">
+          <div className="flex justify-between items-start mb-3">
+            <div className="stat-label">Sales Analytics</div>
+            <Btn variant="ghost" size="sm" onClick={() => setShowAnalytics(false)}>Collapse</Btn>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div style={{ fontSize: 11, color: "#6B7280" }}>Best Seller this month</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>Amaron Hi-Life 2.5Ah</div>
+              <div style={{ fontSize: 12, color: "#4B5563" }}>2,120 units</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div style={{ fontSize: 11, color: "#6B7280" }}>This week</div>
+              <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>84</div>
+              <div style={{ fontSize: 12, color: "#4B5563" }}>units</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div style={{ fontSize: 11, color: "#6B7280" }}>Daily avg</div>
+              <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>16.8</div>
+              <div style={{ fontSize: 12, color: "#4B5563" }}>units</div>
+            </div>
+          </div>
+          <div className="flex items-end gap-3" style={{ height: 160 }}>
+            {chartData.map((c) => (
+              <div key={c.d} className="flex-1 flex flex-col items-center justify-end">
+                <div style={{ fontSize: 11, color: "#4B5563", marginBottom: 4 }}>{c.v}</div>
+                <div style={{ width: "100%", background: "#C00000", borderRadius: "4px 4px 0 0", height: `${(c.v / maxV) * 120}px` }} />
+                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 6 }}>{c.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <AISuggestions
         items={[
           { text: "Logging POS daily improves your demand forecast accuracy by 22%. You're on a 4-day streak.", action: "Continue" },
@@ -754,27 +958,75 @@ export function POSEntry() {
         </div>
 
         <div className="card-base p-0 overflow-x-auto">
-          <div className="px-4 pt-4 stat-label">Today's batches ({batches.length})</div>
+          <div className="px-4 pt-4 flex justify-between items-center">
+            <div className="stat-label">Today's batches ({batches.length})</div>
+            <Btn variant="ghost" size="sm" onClick={() => toast.success("Downloading POS_Log_May2026.csv")}>
+              <Download size={12} style={{ display: "inline", marginRight: 4 }} /> Export CSV
+            </Btn>
+          </div>
           <table className="w-full mt-3" style={{ fontSize: 13 }}>
             <thead>
               <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
                 <th className="py-2 px-4">Batch</th><th className="py-2 px-4">Customer</th>
-                <th className="py-2 px-4">Items</th><th className="py-2 px-4">Total Qty</th>
+                <th className="py-2 px-4">Items</th><th className="py-2 px-4">Qty</th>
+                <th className="py-2 px-4"></th>
               </tr>
             </thead>
             <tbody>
-              {batches.map((b) => (
-                <tr key={b.id} style={{ borderTop: "1px solid #E5E7EB" }}>
-                  <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.id}</td>
-                  <td className="py-2.5 px-4">{b.customer}{b.phone && <div style={{ fontSize: 11, color: "#6B7280" }}>{b.phone}</div>}</td>
-                  <td className="py-2.5 px-4" style={{ fontSize: 12 }}>
-                    {b.lines.map((l, i) => (
-                      <div key={i}>{l.sku} ×{l.qty} <span style={{ color: "#6B7280" }}>({l.vehicle})</span></div>
-                    ))}
-                  </td>
-                  <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.lines.reduce((s, l) => s + l.qty, 0)}</td>
-                </tr>
-              ))}
+              {batches.map((b) => {
+                if (deleteId === b.id) {
+                  return (
+                    <tr key={b.id} style={{ borderTop: "1px solid #E5E7EB", background: "#FEF2F2" }}>
+                      <td className="py-2.5 px-4" colSpan={5}>
+                        <div className="flex items-center justify-between gap-3">
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>Delete this entry?</span>
+                          <div className="flex gap-2">
+                            <Btn size="sm" onClick={() => confirmDelete(b.id)}>Yes</Btn>
+                            <Btn variant="ghost" size="sm" onClick={() => setDeleteId(null)}>No</Btn>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+                if (editId === b.id) {
+                  return (
+                    <tr key={b.id} style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+                      <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.id}</td>
+                      <td className="py-2.5 px-4">
+                        <input value={editCustomer} onChange={(e) => setEditCustomer(e.target.value)} placeholder="Customer" style={{ ...inputStyle, padding: "4px 8px" }} className="w-full mb-1" />
+                        <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Phone" style={{ ...inputStyle, padding: "4px 8px" }} className="w-full" />
+                      </td>
+                      <td className="py-2.5 px-4" style={{ fontSize: 12 }}>{b.lines.map((l) => `${l.sku} ×${l.qty}`).join(", ")}</td>
+                      <td className="py-2.5 px-4">{b.lines.reduce((s, l) => s + l.qty, 0)}</td>
+                      <td className="py-2.5 px-4">
+                        <div className="flex gap-1">
+                          <Btn size="sm" onClick={() => saveEdit(b.id)}>Save</Btn>
+                          <Btn variant="ghost" size="sm" onClick={() => setEditId(null)}>Cancel</Btn>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+                return (
+                  <tr key={b.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.id}</td>
+                    <td className="py-2.5 px-4">{b.customer}{b.phone && <div style={{ fontSize: 11, color: "#6B7280" }}>{b.phone}</div>}</td>
+                    <td className="py-2.5 px-4" style={{ fontSize: 12 }}>
+                      {b.lines.map((l, i) => (
+                        <div key={i}>{l.sku} ×{l.qty} <span style={{ color: "#6B7280" }}>({l.vehicle})</span></div>
+                      ))}
+                    </td>
+                    <td className="py-2.5 px-4" style={{ fontWeight: 600 }}>{b.lines.reduce((s, l) => s + l.qty, 0)}</td>
+                    <td className="py-2.5 px-4">
+                      <div className="flex gap-2">
+                        <button onClick={() => startEdit(b)} aria-label="Edit"><Pencil size={14} color="#4B5563" /></button>
+                        <button onClick={() => setDeleteId(b.id)} aria-label="Delete"><Trash2 size={14} color="#C00000" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
