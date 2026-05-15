@@ -264,11 +264,23 @@ export function ProductCatalog() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((p) => (
           <div key={p.id} className="card-base flex flex-col">
-            <div className="rounded-md overflow-hidden mb-3" style={{ height: 160, background: "#F3F4F6" }}>
+            <button
+              type="button"
+              onClick={() => setDetailProduct(p)}
+              className="rounded-md overflow-hidden mb-3 text-left"
+              style={{ height: 160, background: "#F3F4F6", border: 0, padding: 0, cursor: "pointer" }}
+              aria-label={`View details for ${p.name}`}
+            >
               <img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
+            </button>
             <div className="flex items-start justify-between gap-2 mb-1">
-              <div style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</div>
+              <button
+                type="button"
+                onClick={() => setDetailProduct(p)}
+                style={{ fontSize: 15, fontWeight: 600, textAlign: "left", background: "transparent", border: 0, padding: 0, cursor: "pointer" }}
+              >
+                {p.name}
+              </button>
               <span
                 className="px-2 py-0.5 rounded"
                 style={{
@@ -304,6 +316,13 @@ export function ProductCatalog() {
           </div>
         ))}
       </div>
+      {detailProduct && (
+        <ProductDetailModal
+          product={detailProduct}
+          onClose={() => setDetailProduct(null)}
+          onAdd={() => handleAdd(detailProduct.id, getQty(detailProduct.id))}
+        />
+      )}
     </div>
   );
 }
