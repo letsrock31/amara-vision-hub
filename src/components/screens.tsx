@@ -2691,10 +2691,10 @@ export function PlaceReleaseOrder() {
             <Btn type="submit" disabled={overage}>Submit Release Order</Btn>
             <Btn
               type="button"
-              variant="secondary"
+              variant="ghost"
               onClick={() => {
                 setDraftReleaseOrder({ contractId, qty, site, date, urgent, instructions });
-                addNotification({ text: `Draft saved for ${contract.id}`, type: "info" });
+                addNotification(`Draft saved for ${contract.id}`, "info");
                 toast.success("Draft saved");
                 setView("contracts");
               }}
