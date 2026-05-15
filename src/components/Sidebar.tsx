@@ -74,13 +74,13 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
   const content = (
     <>
       <div className="px-4 py-4">
-        <div style={{ fontSize: 9, textTransform: "uppercase", color: "#444444", letterSpacing: "0.05em" }}>
+        <div style={{ fontSize: 9, textTransform: "uppercase", color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em", fontWeight: 500 }}>
           {profile}
         </div>
       </div>
       {sections.map((sec) => (
         <div key={sec} className="mb-3">
-          <div className="px-4 mb-1.5" style={{ fontSize: 9, textTransform: "uppercase", color: "#444444", letterSpacing: "0.05em" }}>
+          <div className="px-4 mb-1.5" style={{ fontSize: 9, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", letterSpacing: "0.08em", fontWeight: 500 }}>
             {sec}
           </div>
           {items.filter((i) => i.section === sec).map((item) => (
@@ -96,11 +96,13 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
     </>
   );
 
+  const sidebarBg = "linear-gradient(180deg, #3D44E0 0%, #3138C4 100%)";
+
   return (
     <>
       <aside
         className="hidden md:block fixed left-0 top-[52px] bottom-0 z-30 overflow-y-auto"
-        style={{ width: 180, background: "#0F0F15", borderRight: "0.5px solid #1E1E27" }}
+        style={{ width: 180, background: sidebarBg, borderRight: "0.5px solid rgba(255,255,255,0.08)" }}
       >
         {content}
       </aside>
@@ -109,7 +111,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
           <div className="absolute inset-0 bg-black/50" />
           <aside
             className="absolute left-0 top-[52px] bottom-0 overflow-y-auto"
-            style={{ width: 220, background: "#0F0F15", borderRight: "0.5px solid #1E1E27" }}
+            style={{ width: 220, background: sidebarBg, borderRight: "0.5px solid rgba(255,255,255,0.08)" }}
             onClick={(e) => e.stopPropagation()}
           >
             {content}
