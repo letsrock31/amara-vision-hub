@@ -332,7 +332,25 @@ export function MyOrders() {
                 <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(o.total)}</td>
                 <td className="py-3 px-4"><StatusBadge status={o.status} /></td>
                 <td className="py-3 px-4" style={{ color: "#4B5563" }}>{o.eta}</td>
-                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => toast.message(`Tracking ${o.id}`, { description: `Status: ${o.status} · ETA ${o.eta}` })}>Track</Btn></td>
+                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => openAction({
+                  title: `Track Order ${o.id}`,
+                  description: `Live status for your order.`,
+                  summary: [
+                    { label: "Order ID", value: o.id },
+                    { label: "Items", value: o.items },
+                    { label: "Total", value: fmtINR(o.total) },
+                    { label: "Status", value: o.status },
+                    { label: "ETA", value: o.eta },
+                    { label: "Carrier", value: "Amara Logistics · AWB-" + o.id.slice(-4) + "21" },
+                  ],
+                  fields: [
+                    { type: "select", name: "support", label: "Need help?", options: ["No issue — just tracking", "Delivery delay", "Wrong items expected", "Reschedule delivery"] },
+                    { type: "textarea", name: "notes", label: "Message to dispatch (optional)" },
+                  ],
+                  confirmLabel: "Notify Dispatch",
+                  successTitle: "Dispatch notified",
+                  successDescription: "Our logistics team will respond within 2 working hours.",
+                })}>Track</Btn></td>
               </tr>
             ))}
           </tbody>
