@@ -4,8 +4,8 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useApp, type ActionRequest } from "@/lib/app-context";
 
 export function StatCard({
-  label, value, change, accent = "none",
-}: { label: string; value: string; change?: string; accent?: "crimson" | "green" | "amber" | "none" }) {
+  label, value, change, accent = "none", onClick,
+}: { label: string; value: string; change?: string; accent?: "crimson" | "green" | "amber" | "none"; onClick?: () => void }) {
   const top =
     accent === "crimson" ? "#C00000" :
     accent === "green" ? "#00A651" :
@@ -19,7 +19,17 @@ export function StatCard({
     accent === "green" ? "#15803D" :
     accent === "amber" ? "#B45309" : "#4B5563";
   return (
-    <div className="card-base" style={{ borderTop: accent === "none" ? "1px solid #E5E7EB" : `3px solid ${top}` }}>
+    <div
+      className="card-base"
+      onClick={onClick}
+      style={{
+        borderTop: accent === "none" ? "1px solid #E5E7EB" : `3px solid ${top}`,
+        cursor: onClick ? "pointer" : undefined,
+        transition: "transform .12s ease, box-shadow .12s ease",
+      }}
+      onMouseEnter={onClick ? (e) => (e.currentTarget.style.transform = "translateY(-1px)") : undefined}
+      onMouseLeave={onClick ? (e) => (e.currentTarget.style.transform = "translateY(0)") : undefined}
+    >
       <div className="stat-label">{label}</div>
       <div className="stat-value mt-2">{value}</div>
       {change && (
