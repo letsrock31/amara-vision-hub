@@ -2586,6 +2586,10 @@ export function PlaceReleaseOrder() {
   const [instructions, setInstructions] = useState<string>(draftReleaseOrder?.instructions ?? "");
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState<{ ro: string; eta: string; remaining: number } | null>(null);
+  const [customSites, setCustomSites] = useState<{ id: string; name: string }[]>([]);
+  const [showNewSite, setShowNewSite] = useState(false);
+  const [newSiteName, setNewSiteName] = useState("");
+  const [newSiteAddr, setNewSiteAddr] = useState("");
 
   useEffect(() => {
     // Clear selectedContractId once consumed
