@@ -2741,6 +2741,7 @@ export function PlaceReleaseOrder() {
           onConfirm={() => {
             const ro = "RO-" + Math.floor(1000 + Math.random() * 9000);
             addReleaseOrder({ id: ro, contractId: contract.id, qty, site, date, eta: etaDate, total });
+            setDraftReleaseOrder(null);
             setConfirming(false);
             setConfirmed({ ro, eta: etaDate, remaining: contract.remaining - qty });
           }}
