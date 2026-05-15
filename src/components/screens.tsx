@@ -1487,7 +1487,9 @@ export function RSMDashboard() {
                     <td className="py-2 px-3" style={{ color: d.status === "Dormant" ? "#C00000" : "#4B5563" }}>{d.lastOrder}</td>
                     <td className="py-2 px-3"><StatusBadge status={d.status} /></td>
                     <td className="py-2 px-3">
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-wrap">
+                        <Btn size="sm" variant="ghost" onClick={() => setView("dealer-orders")}>Orders</Btn>
+                        <Btn size="sm" variant="ghost" onClick={() => setPosDealer(d)}>POS</Btn>
                         <Btn size="sm" variant="ghost" onClick={() => setVisitDealer(d)}>Visit</Btn>
                         <Btn size="sm" variant="ghost" onClick={() => togglePriority(d.id)}>{isPri ? "Unflag" : "Flag"}</Btn>
                       </div>
