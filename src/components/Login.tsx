@@ -11,7 +11,7 @@ export function Login() {
       <div className="w-full max-w-md card-base" style={{ padding: 32 }}>
         <div className="flex items-center justify-center gap-3 mb-8">
           <span style={{ color: "#c00000", fontSize: 16, letterSpacing: "0.15em" }}>COGNILIX</span>
-          <span style={{ width: 1, height: 20, background: "#e5e5e0" }} />
+          <span style={{ width: 1, height: 20, background: "#2E2E2E" }} />
           <span style={{ color: "#22a850", fontSize: 14 }}>Amara Raja</span>
         </div>
         <h1 style={{ fontSize: 20 }} className="text-center">Welcome back</h1>
@@ -25,7 +25,7 @@ export function Login() {
             value={selected}
             onChange={(e) => setSelected(e.target.value as Profile)}
             className="w-full px-3 py-2 rounded-md outline-none"
-            style={{ border: "0.5px solid #e5e5e0", background: "#fff", fontSize: 14 }}
+            style={{ border: "0.5px solid #2E2E2E", background: "#1A1A1A", fontSize: 14 }}
           >
             <option value="">Choose a profile...</option>
             {PROFILES.map((p) => (

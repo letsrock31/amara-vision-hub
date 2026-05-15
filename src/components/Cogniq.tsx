@@ -68,16 +68,16 @@ export function Cogniq() {
           style={{
             width: "min(380px, calc(100vw - 32px))",
             height: "min(540px, calc(100vh - 120px))",
-            background: "#fff",
-            border: "1px solid #cecbf6",
+            background: "#1A1A1A",
+            border: "1px solid #3A3470",
             borderRadius: 12,
             boxShadow: "0 10px 40px rgba(83,74,183,0.18)",
           }}
         >
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #e5e5e0" }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #2E2E2E" }}>
             <div className="flex items-center gap-2">
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#534ab7" }} />
-              <span style={{ fontSize: 13, color: "#111" }}>Cogniq AI</span>
+              <span style={{ fontSize: 13, color: "#FFFFFF" }}>Cogniq AI</span>
               <span style={{ fontSize: 10, color: "#9ca3af" }}>Powered by Cogniq</span>
             </div>
             <button onClick={() => setOpen(false)} aria-label="Close">
@@ -97,9 +97,9 @@ export function Cogniq() {
                   className="px-3 py-2 rounded-lg max-w-[85%]"
                   style={{
                     fontSize: 12,
-                    background: m.role === "user" ? "#fef2f2" : "#f5f4ff",
+                    background: m.role === "user" ? "#2E0D0D" : "#14142A",
                     color: m.role === "user" ? "#c00000" : "#534ab7",
-                    border: m.role === "ai" ? "1px solid #cecbf6" : "none",
+                    border: m.role === "ai" ? "1px solid #3A3470" : "none",
                   }}
                 >
                   {m.text}
@@ -108,7 +108,7 @@ export function Cogniq() {
             ))}
           </div>
 
-          <div className="p-3 space-y-2" style={{ borderTop: "1px solid #e5e5e0" }}>
+          <div className="p-3 space-y-2" style={{ borderTop: "1px solid #2E2E2E" }}>
             <div className="flex flex-wrap gap-1.5">
               {chips.map((c) => (
                 <button
@@ -117,9 +117,9 @@ export function Cogniq() {
                   className="px-2 py-1 rounded-full"
                   style={{
                     fontSize: 10,
-                    background: "#f5f4ff",
+                    background: "#14142A",
                     color: "#534ab7",
-                    border: "1px solid #cecbf6",
+                    border: "1px solid #3A3470",
                   }}
                 >
                   {c.q.length > 50 ? c.q.slice(0, 48) + "…" : c.q}
@@ -138,7 +138,7 @@ export function Cogniq() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Cogniq anything..."
                 className="flex-1 px-3 py-2 rounded-md outline-none"
-                style={{ border: "1px solid #cecbf6", fontSize: 12, background: "#fff" }}
+                style={{ border: "1px solid #3A3470", fontSize: 12, background: "#1A1A1A" }}
               />
               <button
                 type="submit"
