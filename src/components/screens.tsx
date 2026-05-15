@@ -504,25 +504,38 @@ export function CartPage() {
   const { cart, setCart, setView, addOrder } = useApp();
   const [confirming, setConfirming] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [promo, setPromo] = useState("");
+  const [promoError, setPromoError] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
   const subtotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
   const gst = Math.round(subtotal * 0.18);
   const delivery = subtotal > 200000 ? 0 : 500;
-  const total = subtotal + gst + delivery;
+  const total = subtotal - promoDiscount + gst + delivery;
 
   const updateQty = (id: string, q: number) => {
     if (q <= 0) setCart(cart.filter((c) => c.id !== id));
     else setCart(cart.map((c) => c.id === id ? { ...c, qty: q } : c));
   };
 
-  const placeOrder = (deliveryDate: string) => {
+  const applyPromo = () => {
+    if (promo.trim().toUpperCase() === "DEALER20") {
+      setPromoDiscount(Math.round(subtotal * 0.05));
+      setPromoError("");
+    } else {
+      setPromoDiscount(0);
+      setPromoError("Invalid promo code");
+    }
+  };
+
+  const placeOrder = (deliveryDate: string, urgent: boolean, finalTotal: number) => {
     const id = "ORD-" + Math.floor(1000 + Math.random() * 9000);
-    const eta = new Date(new Date(deliveryDate).getTime() + 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    const eta = new Date(new Date(deliveryDate).getTime() + (urgent ? 86400000 : 86400000)).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
     const itemsStr = cart.map((c) => `${c.name} ×${c.qty}`).join(", ");
-    const order: DealerOrder = { id, date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }), items: itemsStr, total, status: "Processing", eta, cart: [...cart] };
+    const order: DealerOrder = { id, date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }), items: itemsStr, total: finalTotal, status: "Processing", eta, cart: [...cart] };
     addOrder(order);
     setCart([]);
     setConfirming(false);
-    setSuccess(`Order ${id} placed successfully. Estimated delivery: ${eta}`);
+    setSuccess(`Order ${id} placed successfully${urgent ? " (urgent)" : ""}. Estimated delivery: ${eta}`);
     setTimeout(() => setView("orders"), 1500);
   };
 
@@ -547,43 +560,62 @@ export function CartPage() {
       <PageHeader title="Your Cart" sub={`${cart.length} item${cart.length === 1 ? "" : "s"} · Review and proceed to checkout`} />
       {cart.length > 0 && (
         <div className="grid lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 card-base p-0">
-            <table className="w-full" style={{ fontSize: 13 }}>
-              <thead>
-                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
-                  <th className="py-3 px-4">Product</th>
-                  <th className="py-3 px-4">Price</th>
-                  <th className="py-3 px-4">Quantity</th>
-                  <th className="py-3 px-4">Total</th>
-                  <th className="py-3 px-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {cart.map((c) => (
-                  <tr key={c.id} style={{ borderTop: "1px solid #E5E7EB" }}>
-                    <td className="py-3 px-4" style={{ fontWeight: 500 }}>{c.name}</td>
-                    <td className="py-3 px-4">{fmtINR(c.price)}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center" style={{ border: "1px solid #D1D5DB", borderRadius: 6, width: "fit-content" }}>
-                        <button onClick={() => updateQty(c.id, c.qty - 1)} style={{ padding: "4px 8px" }}><Minus size={12} /></button>
-                        <span style={{ minWidth: 32, textAlign: "center" }}>{c.qty}</span>
-                        <button onClick={() => updateQty(c.id, c.qty + 1)} style={{ padding: "4px 8px" }}><Plus size={12} /></button>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
-                    <td className="py-3 px-4">
-                      <button onClick={() => updateQty(c.id, 0)} aria-label="Remove"><Trash2 size={16} color="#C00000" /></button>
-                    </td>
+          <div className="lg:col-span-2 space-y-3">
+            <div className="card-base p-0">
+              <table className="w-full" style={{ fontSize: 13 }}>
+                <thead>
+                  <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                    <th className="py-3 px-4">Product</th>
+                    <th className="py-3 px-4">Price</th>
+                    <th className="py-3 px-4">Quantity</th>
+                    <th className="py-3 px-4">Total</th>
+                    <th className="py-3 px-4"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {cart.map((c) => (
+                    <tr key={c.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                      <td className="py-3 px-4" style={{ fontWeight: 500 }}>{c.name}</td>
+                      <td className="py-3 px-4">{fmtINR(c.price)}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center" style={{ border: "1px solid #D1D5DB", borderRadius: 6, width: "fit-content" }}>
+                          <button onClick={() => updateQty(c.id, c.qty - 1)} style={{ padding: "4px 8px" }}><Minus size={12} /></button>
+                          <span style={{ minWidth: 32, textAlign: "center" }}>{c.qty}</span>
+                          <button onClick={() => updateQty(c.id, c.qty + 1)} style={{ padding: "4px 8px" }}><Plus size={12} /></button>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
+                      <td className="py-3 px-4">
+                        <button onClick={() => updateQty(c.id, 0)} aria-label="Remove"><Trash2 size={16} color="#C00000" /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="card-base">
+              <div className="flex gap-2 items-center">
+                <input
+                  value={promo}
+                  onChange={(e) => setPromo(e.target.value)}
+                  placeholder="Promo code"
+                  className="flex-1 px-3 py-2 rounded-md"
+                  style={{ border: "1px solid #D1D5DB", fontSize: 13 }}
+                />
+                <Btn size="sm" onClick={applyPromo}>Apply</Btn>
+              </div>
+              {promoError && <div style={{ fontSize: 12, color: "#C00000", marginTop: 6 }}>{promoError}</div>}
+              {promoDiscount > 0 && <div style={{ fontSize: 12, color: "#15803D", marginTop: 6, fontWeight: 600 }}>Promo applied: 5% off</div>}
+            </div>
           </div>
 
           <div className="card-base h-fit" style={{ borderTop: "3px solid #5B5BF5" }}>
             <div className="stat-label mb-3">Order Summary</div>
             <div className="space-y-2.5" style={{ fontSize: 14 }}>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Subtotal</span><span>{fmtINR(subtotal)}</span></div>
+              {promoDiscount > 0 && (
+                <div className="flex justify-between" style={{ color: "#15803D" }}><span>Discount (DEALER20)</span><span>−{fmtINR(promoDiscount)}</span></div>
+              )}
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>GST (18%)</span><span>{fmtINR(gst)}</span></div>
               <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Delivery</span><span>{delivery === 0 ? "FREE" : fmtINR(delivery)}</span></div>
               <div className="flex justify-between pt-3" style={{ borderTop: "1px solid #E5E7EB", fontSize: 16, fontWeight: 700 }}>
