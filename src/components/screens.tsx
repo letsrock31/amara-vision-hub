@@ -524,10 +524,17 @@ export function MyOrders() {
   const [dateRange, setDateRange] = useState("30d");
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("All");
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [trackOrder, setTrackOrder] = useState<DealerOrder | null>(null);
-  const { orders } = useApp();
+  const [invoiceOrder, setInvoiceOrder] = useState<DealerOrder | null>(null);
+  const [complaintOrder, setComplaintOrder] = useState<DealerOrder | null>(null);
+  const { orders, complaints, addToCart, setView } = useApp();
 
-  const all: DealerOrder[] = useMemo(() => [...orders, ...DEALER_ORDERS], [orders]);
+  const all: DealerOrder[] = useMemo(() => {
+    const ids = new Set(orders.map((o) => o.id));
+    return [...orders, ...DEALER_ORDERS.filter((o) => !ids.has(o.id))];
+  }, [orders]);
+
   const filtered = all.filter((o) =>
     (statusFilter === "All" || o.status === statusFilter) &&
     (o.id.toLowerCase().includes(search.toLowerCase()) || o.items.toLowerCase().includes(search.toLowerCase()))
@@ -535,13 +542,24 @@ export function MyOrders() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const reorder = (o: DealerOrder) => {
+    if (o.cart && o.cart.length > 0) {
+      o.cart.forEach((c) => addToCart(c));
+    } else {
+      // synthesize from items string -> default reorder of P1
+      addToCart({ id: "P1", name: "Amaron Pro 35Ah 4W", price: 4200, qty: 10 });
+    }
+    toast.success(`Items from ${o.id} added to cart`);
+    setView("cart");
+  };
+
   return (
     <div>
       <PageHeader title="My Orders" sub="Track every order placed with Amara Raja" />
       <AISuggestions
         items={[
-          { text: "ORD-7860 (Amaron Hi-Life ×24) is processing — projected to dispatch by 18 May.", action: "Track", onAction: () => setTrackOrder(DEALER_ORDERS.find((o) => o.id === "ORD-7860") ?? null) },
-          { text: "Based on your sales pattern, Amaron Pro 35Ah may run out in 9 days. Reorder now?", action: "Reorder" },
+          { text: "ORD-7860 (Amaron Hi-Life ×24) is processing — projected to dispatch by 18 May.", action: "Track", onAction: () => setTrackOrder(all.find((o) => o.id === "ORD-7860") ?? null) },
+          { text: "Based on your sales pattern, Amaron Pro 35Ah may run out in 9 days. Reorder now?", action: "Reorder Now", onAction: () => { addToCart({ id: "P1", name: "Amaron Pro 35Ah 4W", price: 4200, qty: 40 }); toast.success("Added 40 × Amaron Pro 35Ah"); setView("cart"); } },
           { text: "Your average order cycle is 7 days. Consider scheduling weekly auto-reorders for top SKUs.", action: "Set up Auto-reorder" },
         ]}
       />
@@ -567,48 +585,84 @@ export function MyOrders() {
         <table className="w-full" style={{ fontSize: 13 }}>
           <thead>
             <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+              <th className="py-3 px-4"></th>
               <th className="py-3 px-4">Order ID</th><th className="py-3 px-4">Date</th>
               <th className="py-3 px-4">Items</th><th className="py-3 px-4">Total</th>
-              <th className="py-3 px-4">Status</th><th className="py-3 px-4">ETA</th><th className="py-3 px-4"></th>
+              <th className="py-3 px-4">Status</th><th className="py-3 px-4">ETA</th>
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((o) => (
-              <tr key={o.id} style={{ borderTop: "1px solid #E5E7EB" }}>
-                <td className="py-3 px-4" style={{ fontWeight: 600 }}>{o.id}</td>
-                <td className="py-3 px-4" style={{ color: "#4B5563" }}>{o.date}</td>
-                <td className="py-3 px-4">{o.items}</td>
-                <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(o.total)}</td>
-                <td className="py-3 px-4"><StatusBadge status={o.status} /></td>
-                <td className="py-3 px-4" style={{ color: "#4B5563" }}>{o.eta}</td>
-                <td className="py-3 px-4"><Btn variant="ghost" size="sm" onClick={() => setTrackOrder(o)}>Track</Btn></td>
-              </tr>
-            ))}
+            {pageRows.map((o) => {
+              const isOpen = expanded === o.id;
+              return (
+                <>
+                  <tr key={o.id} style={{ borderTop: "1px solid #E5E7EB", cursor: "pointer" }} onClick={() => setExpanded(isOpen ? null : o.id)}>
+                    <td className="py-3 px-4">{isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</td>
+                    <td className="py-3 px-4" style={{ fontWeight: 600 }}>{o.id}</td>
+                    <td className="py-3 px-4" style={{ color: "#4B5563" }}>{o.date}</td>
+                    <td className="py-3 px-4">{o.items}</td>
+                    <td className="py-3 px-4" style={{ fontWeight: 600 }}>{fmtINR(o.total)}</td>
+                    <td className="py-3 px-4"><StatusBadge status={o.status} /></td>
+                    <td className="py-3 px-4" style={{ color: "#4B5563" }}>{o.eta}</td>
+                  </tr>
+                  {isOpen && (
+                    <tr key={o.id + "-x"} style={{ background: "#F9FAFB", borderTop: "1px solid #E5E7EB" }}>
+                      <td colSpan={7} className="py-4 px-4">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <Btn size="sm" variant="purple" onClick={() => setTrackOrder(o)}><Package size={12} style={{ display: "inline", marginRight: 4 }} /> Track Order</Btn>
+                          <Btn size="sm" variant="ghost" onClick={() => setInvoiceOrder(o)}><Receipt size={12} style={{ display: "inline", marginRight: 4 }} /> View Invoice</Btn>
+                          <Btn size="sm" variant="ghost" onClick={() => setComplaintOrder(o)}><MessageSquare size={12} style={{ display: "inline", marginRight: 4 }} /> Raise Complaint</Btn>
+                          <Btn size="sm" variant="ghost" onClick={() => reorder(o)}><RefreshCw size={12} style={{ display: "inline", marginRight: 4 }} /> Reorder</Btn>
+                        </div>
+                        {o.status === "Delivered" && (
+                          <div className="flex items-center gap-3 p-3 rounded" style={{ background: "#FFFFFF", border: "1px solid #E5E7EB" }}>
+                            <span style={{ fontSize: 13, fontWeight: 600 }}>Rate this order:</span>
+                            <StarRating onSubmit={(n) => toast.success(`Thanks for the ${n}-star rating!`)} />
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })}
           </tbody>
         </table>
       </div>
       <Pagination page={page} totalPages={totalPages} onPage={setPage} />
-      {trackOrder && (
-        <CenterModal widthClass="max-w-xl">
-          <div className="px-5 py-4 flex justify-between items-start" style={{ borderBottom: "1px solid #E5E7EB", background: "#EEF0FF" }}>
-            <div>
-              <h3 style={{ fontSize: 17, fontWeight: 700 }}>Order Tracking</h3>
-              <div style={{ fontSize: 12, color: "#4B5563", marginTop: 2 }}>{trackOrder.id} · placed on {trackOrder.date}</div>
-            </div>
-            <button onClick={() => setTrackOrder(null)}><X size={18} /></button>
+
+      {complaints.length > 0 && (
+        <div className="mt-6">
+          <div className="stat-label mb-2">My Complaints</div>
+          <div className="card-base p-0 overflow-x-auto">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-3 px-4">ID</th><th className="py-3 px-4">Order</th>
+                  <th className="py-3 px-4">Type</th><th className="py-3 px-4">Priority</th>
+                  <th className="py-3 px-4">Raised</th><th className="py-3 px-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {complaints.map((c) => (
+                  <tr key={c.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-3 px-4" style={{ fontWeight: 600 }}>{c.id}</td>
+                    <td className="py-3 px-4">{c.orderId}</td>
+                    <td className="py-3 px-4">{c.type}</td>
+                    <td className="py-3 px-4">{c.priority}</td>
+                    <td className="py-3 px-4">{c.raised}</td>
+                    <td className="py-3 px-4"><StatusBadge status={c.status === "Open" ? "At Risk" : "Good"} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div className="p-5 overflow-y-auto">
-            <StageTimeline status={trackOrder.status} />
-            <div className="mt-4 p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", fontSize: 13 }}>
-              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Estimated delivery</span><span style={{ fontWeight: 700 }}>{trackOrder.eta}</span></div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 6 }}>For support, contact your ARE&amp;M Sales Manager.</div>
-            </div>
-          </div>
-          <div className="px-5 py-3 flex justify-end" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
-            <Btn variant="ghost" size="sm" onClick={() => setTrackOrder(null)}>Close</Btn>
-          </div>
-        </CenterModal>
+        </div>
       )}
+
+      {trackOrder && <TrackOrderModal orderId={trackOrder.id} status={trackOrder.status} eta={trackOrder.eta} date={trackOrder.date} onClose={() => setTrackOrder(null)} />}
+      {invoiceOrder && <InvoicePanel orderId={invoiceOrder.id} total={invoiceOrder.total} onClose={() => setInvoiceOrder(null)} />}
+      {complaintOrder && <ComplaintModal orderId={complaintOrder.id} onClose={() => setComplaintOrder(null)} />}
     </div>
   );
 }
