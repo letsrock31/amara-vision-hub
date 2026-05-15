@@ -131,7 +131,7 @@ function SuccessBanner({ text, onClose }: { text: string; onClose?: () => void }
 
 /* =================== DEALER: HOME =================== */
 export function DealerHome() {
-  const { setView, addToCart } = useApp();
+  const { setView, addToCart, setPendingOrdersFilter, setShowLowStockBanner } = useApp();
   const reorderNow = () => {
     addToCart({ id: "P1", name: "Amaron Pro 35Ah 4W", price: 4200, qty: 40 });
     setView("catalog");
@@ -148,10 +148,10 @@ export function DealerHome() {
         ]}
       />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        <StatCard label="Open Orders" value="2" change="ETA 19–20 May" accent="crimson" />
-        <StatCard label="Sales This Week" value="₹1.84 L" change="+12% vs last week" accent="green" />
-        <StatCard label="SKUs in Low Stock" value="3" change="Reorder recommended" accent="amber" />
-        <StatCard label="Days Since Last Order" value="9" change="Avg cycle: 7 days" accent="amber" />
+        <StatCard label="Open Orders" value="2" change="ETA 19–20 May" accent="crimson" onClick={() => { setPendingOrdersFilter("active"); setView("orders"); }} />
+        <StatCard label="Sales This Week" value="₹1.84 L" change="+12% vs last week" accent="green" onClick={() => setView("orders")} />
+        <StatCard label="SKUs in Low Stock" value="3" change="Reorder recommended" accent="amber" onClick={() => { setShowLowStockBanner(true); setView("pos"); }} />
+        <StatCard label="Days Since Last Order" value="9" change="Avg cycle: 7 days" accent="amber" onClick={() => setView("catalog")} />
       </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div className="card-base">
