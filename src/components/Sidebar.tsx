@@ -42,9 +42,9 @@ export const NAV_BY_PROFILE: Record<Profile, NavItem[]> = {
 function NavBtn({ item, active, onClick }: { item: NavItem; active: boolean; onClick: () => void }) {
   const Icon = item.icon;
   const [hover, setHover] = useState(false);
-  const color = active ? "#C00000" : hover ? "#CCCCCC" : "#666666";
-  const iconColor = active ? "#C00000" : hover ? "#CCCCCC" : "#555555";
-  const bg = active ? "#16161D" : hover ? "#16161D" : "transparent";
+  const color = active ? "#FFFFFF" : hover ? "#FFFFFF" : "rgba(255,255,255,0.72)";
+  const iconColor = active ? "#C6F24E" : hover ? "#FFFFFF" : "rgba(255,255,255,0.72)";
+  const bg = active ? "rgba(255,255,255,0.12)" : hover ? "rgba(255,255,255,0.06)" : "transparent";
   return (
     <button
       onClick={onClick}
@@ -52,10 +52,11 @@ function NavBtn({ item, active, onClick }: { item: NavItem; active: boolean; onC
       onMouseLeave={() => setHover(false)}
       className="w-full flex items-center gap-2.5 px-4 py-2 transition-colors"
       style={{
-        borderLeft: active ? "2px solid #C00000" : "2px solid transparent",
+        borderLeft: active ? "2px solid #C6F24E" : "2px solid transparent",
         background: bg,
         color,
         fontSize: 12,
+        fontWeight: active ? 500 : 400,
       }}
     >
       <Icon size={14} color={iconColor} />
