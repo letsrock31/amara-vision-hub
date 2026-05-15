@@ -87,8 +87,8 @@ export function Btn({
   children: ReactNode; variant?: "crimson" | "ghost" | "green" | "purple";
   onClick?: () => void; type?: "button" | "submit"; disabled?: boolean; size?: "sm" | "md";
 }) {
-  const bg = variant === "crimson" ? "#c00000" : variant === "green" ? "#22a850" : variant === "purple" ? "#534ab7" : "transparent";
-  const color = variant === "ghost" ? "#FFFFFF" : "#1A1A1A";
+  const bg = variant === "crimson" ? "#C00000" : variant === "green" ? "#22A850" : variant === "purple" ? "#534AB7" : "transparent";
+  const color = variant === "ghost" ? "#9CA3AF" : "#FFFFFF";
   const border = variant === "ghost" ? "0.5px solid #2E2E2E" : "none";
   const padding = size === "sm" ? "4px 10px" : "6px 14px";
   return (
