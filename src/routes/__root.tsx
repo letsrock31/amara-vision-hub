@@ -80,6 +80,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Cognilix | Amara Raja" },
+      { name: "twitter:description", content: "Unified demand and channel intelligence for Amara Raja Energy and Mobility" },
     ],
     links: [
       {
