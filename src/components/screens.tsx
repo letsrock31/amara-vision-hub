@@ -858,6 +858,7 @@ export function DealerOrdersAdmin() {
   const [status, setStatus] = useState("All");
   const [page, setPage] = useState(1);
   const [drawerOrder, setDrawerOrder] = useState<RegOrder | null>(null);
+  const [escalateId, setEscalateId] = useState<string | null>(null);
   const { dealerOrdersFilter, setDealerOrdersFilter } = useApp();
 
   const filtered = REGIONAL_ORDERS.filter((o) =>
