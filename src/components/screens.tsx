@@ -1784,17 +1784,25 @@ export function MySites() {
   const [openSiteId, setOpenSiteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("All");
   const [srUnit, setSrUnit] = useState<{ siteName: string; unitId: string } | null>(null);
+  const [srInitial, setSrInitial] = useState<{ type?: string; priority?: string }>({});
+  const [historyUnit, setHistoryUnit] = useState<{ unitId: string; model: string; installed: string; isCritical: boolean } | null>(null);
+  const { serviceRequests, updateServiceRequest } = useApp();
+  const [commentSr, setCommentSr] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
   const totalUnits = SITES.reduce((s, x) => s + x.units, 0);
   const atRisk = SITES.filter((s) => s.status === "At Risk").reduce((s, x) => s + x.units, 0);
   const critical = SITES.filter((s) => s.status === "Critical").reduce((s, x) => s + x.units, 0);
 
   const filtered = SITES.filter((s) => statusFilter === "All" || s.status === statusFilter);
+  const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
   if (openSiteId) {
     const site = SITES.find((s) => s.id === openSiteId)!;
     const units = SITE_UNITS[openSiteId] ?? [];
     const siteCritical = units.filter((u) => u.status === "Critical").length;
     const siteRisk = units.filter((u) => u.status === "At Risk").length;
+    const firstUnitId = units[0]?.unitId ?? site.id + "-01";
+    const siteRequests = serviceRequests.filter((s) => s.siteName === site.id || s.siteName === site.name);
     return (
       <div>
         <button onClick={() => setOpenSiteId(null)} className="flex items-center gap-1.5 mb-3" style={{ fontSize: 13, color: "#2B31B8", fontWeight: 600 }}>
@@ -1810,11 +1818,71 @@ export function MySites() {
           <StatCard label="At Risk Units" value={String(siteRisk)} accent="amber" />
           <StatCard label="Critical Units" value={String(siteCritical)} accent="crimson" />
         </div>
-        <div className="card-base p-4">
-          <div className="stat-label mb-3">Battery Units</div>
-          <UnitsTable siteId={openSiteId} onRaise={(unitId) => setSrUnit({ siteName: site.name, unitId })} />
+        <div className="flex gap-2 flex-wrap mb-4">
+          <Btn variant="ghost" size="sm" onClick={() => toast.success("SiteReport_" + site.id + "_May2026.pdf downloaded")}><Download size={12} /> Download Report</Btn>
+          <Btn variant="ghost" size="sm" onClick={() => { setSrInitial({ type: "Inspection" }); setSrUnit({ siteName: site.name, unitId: firstUnitId }); }}><Search size={12} /> Request Inspection</Btn>
+          <Btn variant="crimson" size="sm" onClick={() => { setSrInitial({ type: "Emergency", priority: "Urgent" }); setSrUnit({ siteName: site.name, unitId: firstUnitId }); }}><AlertTriangle size={12} /> Emergency Replacement</Btn>
         </div>
-        {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
+        <div className="card-base p-4 mb-4">
+          <div className="stat-label mb-3">Battery Units</div>
+          <UnitsTable
+            siteId={openSiteId}
+            onRaise={(unitId) => { setSrInitial({}); setSrUnit({ siteName: site.name, unitId }); }}
+            onHistory={(u) => setHistoryUnit(u)}
+          />
+        </div>
+        <div className="card-base p-4 mb-4">
+          <div className="stat-label mb-3">Service Requests for This Site</div>
+          {siteRequests.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#6B7280" }}>No service requests for this site yet.</div>
+          ) : (
+            <div className="overflow-x-auto rounded" style={{ border: "1px solid #E5E7EB" }}>
+              <table className="w-full" style={{ fontSize: 12 }}>
+                <thead style={{ background: "#F9FAFB" }}>
+                  <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+                    <th className="py-2 px-3">SR ID</th><th className="py-2 px-3">Unit ID</th><th className="py-2 px-3">Type</th>
+                    <th className="py-2 px-3">Priority</th><th className="py-2 px-3">Status</th><th className="py-2 px-3">Raised</th><th className="py-2 px-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {siteRequests.map((s) => (
+                    <React.Fragment key={s.id}>
+                      <tr style={{ borderTop: "1px solid #E5E7EB" }}>
+                        <td className="py-2 px-3" style={{ fontWeight: 600 }}>{s.id}</td>
+                        <td className="py-2 px-3">{s.unitId}</td>
+                        <td className="py-2 px-3">{s.type}</td>
+                        <td className="py-2 px-3">{s.priority}</td>
+                        <td className="py-2 px-3"><StatusBadge status={s.status || "Submitted"} /></td>
+                        <td className="py-2 px-3" style={{ color: "#4B5563" }}>{s.raised || today}</td>
+                        <td className="py-2 px-3"><Btn size="sm" variant="ghost" onClick={() => { setCommentSr(s.id); setCommentText(""); }}>Add Comment</Btn></td>
+                      </tr>
+                      {commentSr === s.id && (
+                        <tr style={{ background: "#F9FAFB" }}>
+                          <td colSpan={7} className="p-3">
+                            <textarea rows={2} value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                              placeholder="Add a comment..."
+                              style={{ width: "100%", border: "1px solid #D1D5DB", borderRadius: 6, padding: "6px 8px", fontSize: 13 }} />
+                            <div className="flex gap-2 mt-2 items-center">
+                              <Btn size="sm" onClick={() => {
+                                if (!commentText.trim()) return;
+                                updateServiceRequest(s.id, { comments: [...(s.comments ?? []), { text: commentText, date: today }] });
+                                setCommentSr(null); setCommentText("");
+                                toast.success("Comment added");
+                              }}>Submit Comment</Btn>
+                              <button onClick={() => { setCommentSr(null); setCommentText(""); }} style={{ fontSize: 12, color: "#4B5563" }}>Cancel</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} initialType={srInitial.type} initialPriority={srInitial.priority} onClose={() => { setSrUnit(null); setSrInitial({}); }} />}
+        {historyUnit && <UnitHistoryModal {...historyUnit} onClose={() => setHistoryUnit(null)} />}
       </div>
     );
   }
