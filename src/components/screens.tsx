@@ -787,7 +787,7 @@ export function POSEntry() {
 
 type RegOrder = typeof REGIONAL_ORDERS[number];
 
-function OrderDetailDrawer({ order, onClose }: { order: RegOrder; onClose: () => void }) {
+function OrderDetailDrawer({ order, onClose, onEscalate }: { order: RegOrder; onClose: () => void; onEscalate: () => void }) {
   // synthesize line items from skus string
   const lineItems = order.skus.split(",").map((s) => s.trim()).map((s, i) => {
     const m = s.match(/^(.+?) ×(\d+)$/);
