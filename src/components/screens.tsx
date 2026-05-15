@@ -2680,8 +2680,21 @@ export function PlaceReleaseOrder() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="stat-label block mb-1">Delivery Site</label>
-              <select value={site} onChange={(e) => setSite(e.target.value)} className="w-full" style={inputStyle}>
+              <select
+                value={site}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") {
+                    setShowNewSite(true);
+                  } else {
+                    setSite(e.target.value);
+                  }
+                }}
+                className="w-full"
+                style={inputStyle}
+              >
                 {SITES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {customSites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                <option value="__new__">+ Add New Site</option>
               </select>
             </div>
             <div>
@@ -2689,6 +2702,53 @@ export function PlaceReleaseOrder() {
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full" style={inputStyle} />
             </div>
           </div>
+          {showNewSite && (
+            <div style={{ border: "1px solid #E5E7EB", borderRadius: 8, padding: 12, background: "#FAFAFB" }}>
+              <div className="stat-label mb-2">New Delivery Site</div>
+              <div className="space-y-2">
+                <input
+                  placeholder="Site Name"
+                  value={newSiteName}
+                  onChange={(e) => setNewSiteName(e.target.value)}
+                  className="w-full"
+                  style={inputStyle}
+                />
+                <input
+                  placeholder="Full Address"
+                  value={newSiteAddr}
+                  onChange={(e) => setNewSiteAddr(e.target.value)}
+                  className="w-full"
+                  style={inputStyle}
+                />
+                <div className="flex gap-2">
+                  <Btn
+                    type="button"
+                    onClick={() => {
+                      if (!newSiteName.trim()) return;
+                      const id = "SITE-" + Math.floor(100 + Math.random() * 900);
+                      setCustomSites((prev) => [...prev, { id, name: newSiteName + " — " + newSiteAddr }]);
+                      setSite(id);
+                      setNewSiteName("");
+                      setNewSiteAddr("");
+                      setShowNewSite(false);
+                    }}
+                  >
+                    Save Site
+                  </Btn>
+                  <Btn
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowNewSite(false);
+                      if (site === "__new__") setSite(SITES[0].id);
+                    }}
+                  >
+                    Cancel
+                  </Btn>
+                </div>
+              </div>
+            </div>
+          )}
           <div>
             <label className="stat-label block mb-1">Quantity</label>
             <input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} className="w-full" style={inputStyle} />
