@@ -111,8 +111,8 @@ export function ProductCatalog() {
               className="px-3 py-1.5 rounded-full"
               style={{
                 fontSize: 11,
-                background: filter === f ? "#c00000" : "#1A1A1A",
-                color: filter === f ? "#1A1A1A" : "#FFFFFF",
+                background: filter === f ? "#C00000" : "#1A1A1A",
+                color: "#FFFFFF",
                 border: "0.5px solid #2E2E2E",
               }}
             >
