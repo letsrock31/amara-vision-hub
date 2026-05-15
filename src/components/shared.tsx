@@ -1,9 +1,9 @@
 import { ReactNode, useState } from "react";
 import { toast } from "sonner";
-import { X, CheckCircle2, Download, ArrowRight, Phone, Mail, Star } from "lucide-react";
+import { X, CheckCircle2, Download, Phone, Mail, Star } from "lucide-react";
 import { Btn, StatusBadge } from "./ui-bits";
-import { useApp, genId, type DealerOrder, type ReleaseOrder } from "@/lib/app-context";
-import { fmtINR, SITE_UNITS, SKU_SELLTHROUGH, ALL_FLEET_SITES } from "@/lib/mock-data";
+import { useApp, genId } from "@/lib/app-context";
+import { fmtINR, SKU_SELLTHROUGH } from "@/lib/mock-data";
 
 /* ================== PRIMITIVES (sticky — no outside-click close) ================== */
 
