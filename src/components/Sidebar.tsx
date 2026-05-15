@@ -44,7 +44,7 @@ function NavBtn({ item, active, onClick }: { item: NavItem; active: boolean; onC
   const [hover, setHover] = useState(false);
   const color = active ? "#C00000" : hover ? "#CCCCCC" : "#666666";
   const iconColor = active ? "#C00000" : hover ? "#CCCCCC" : "#555555";
-  const bg = active ? "#1A1A1A" : hover ? "#1A1A1A" : "transparent";
+  const bg = active ? "#16161D" : hover ? "#16161D" : "transparent";
   return (
     <button
       onClick={onClick}
@@ -99,7 +99,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
     <>
       <aside
         className="hidden md:block fixed left-0 top-[52px] bottom-0 z-30 overflow-y-auto"
-        style={{ width: 180, background: "#111111", borderRight: "0.5px solid #222222" }}
+        style={{ width: 180, background: "#0F0F15", borderRight: "0.5px solid #1E1E27" }}
       >
         {content}
       </aside>
@@ -108,7 +108,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
           <div className="absolute inset-0 bg-black/50" />
           <aside
             className="absolute left-0 top-[52px] bottom-0 overflow-y-auto"
-            style={{ width: 220, background: "#111111", borderRight: "0.5px solid #222222" }}
+            style={{ width: 220, background: "#0F0F15", borderRight: "0.5px solid #1E1E27" }}
             onClick={(e) => e.stopPropagation()}
           >
             {content}

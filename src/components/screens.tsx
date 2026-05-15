@@ -28,13 +28,13 @@ export function DealerHome() {
         <div className="card-base">
           <div className="stat-label mb-3">Quick actions</div>
           <div className="flex flex-col gap-2">
-            <button onClick={() => setView("catalog")} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#222222]" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }}>
+            <button onClick={() => setView("catalog")} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#1E1E27]" style={{ border: "0.5px solid #26262F", fontSize: 13 }}>
               Browse Product Catalog <ArrowRight size={14} />
             </button>
-            <button onClick={() => setView("orders")} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#222222]" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }}>
+            <button onClick={() => setView("orders")} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#1E1E27]" style={{ border: "0.5px solid #26262F", fontSize: 13 }}>
               Track My Orders <ArrowRight size={14} />
             </button>
-            <button onClick={() => setView("pos")} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#222222]" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }}>
+            <button onClick={() => setView("pos")} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#1E1E27]" style={{ border: "0.5px solid #26262F", fontSize: 13 }}>
               Log Today's Sales (POS) <ArrowRight size={14} />
             </button>
           </div>
@@ -100,7 +100,7 @@ export function ProductCatalog() {
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products..."
             className="w-full pl-8 pr-3 py-2 rounded-md outline-none"
-            style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}
+            style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}
           />
         </div>
         <div className="flex gap-1.5">
@@ -111,9 +111,9 @@ export function ProductCatalog() {
               className="px-3 py-1.5 rounded-full"
               style={{
                 fontSize: 11,
-                background: filter === f ? "#C00000" : "#1A1A1A",
+                background: filter === f ? "#C00000" : "#16161D",
                 color: "#FFFFFF",
-                border: "0.5px solid #2E2E2E",
+                border: "0.5px solid #26262F",
               }}
             >
               {f}
@@ -122,7 +122,7 @@ export function ProductCatalog() {
           <button
             onClick={() => setCartOpen(true)}
             className="px-3 py-1.5 rounded-full flex items-center gap-1"
-            style={{ fontSize: 11, background: "#1A1A1A", border: "0.5px solid #2E2E2E" }}
+            style={{ fontSize: 11, background: "#16161D", border: "0.5px solid #26262F" }}
           >
             <ShoppingCart size={12} /> Cart ({cartItems.reduce((s, i) => s + i.q, 0)})
           </button>
@@ -134,9 +134,9 @@ export function ProductCatalog() {
           <div key={p.id} className="card-base flex flex-col">
             <div
               className="rounded-md flex items-center justify-center mb-3"
-              style={{ height: 110, background: p.brand === "Amaron" ? "#2E0D0D" : p.brand === "Powerzone" ? "#2A2A2A" : "#0A2212" }}
+              style={{ height: 110, background: p.brand === "Amaron" ? "#2E0D0D" : p.brand === "Powerzone" ? "#2A2A2A" : "#1B2410" }}
             >
-              <Battery size={36} color={p.brand === "Amaron" ? "#c00000" : p.brand === "Powerzone" ? "#9ca3af" : "#22a850"} />
+              <Battery size={36} color={p.brand === "Amaron" ? "#c00000" : p.brand === "Powerzone" ? "#9ca3af" : "#B8E94A"} />
             </div>
             <div className="flex items-start justify-between gap-2 mb-1">
               <div style={{ fontSize: 13 }}>{p.name}</div>
@@ -155,7 +155,7 @@ export function ProductCatalog() {
             <div className="flex items-end justify-between mt-3">
               <div>
                 <div style={{ fontSize: 16 }}>{fmtINR(p.price)}</div>
-                <div style={{ fontSize: 10, color: p.stock === "Low Stock" ? "#ef9f27" : "#22a850" }}>{p.stock}</div>
+                <div style={{ fontSize: 10, color: p.stock === "Low Stock" ? "#ef9f27" : "#B8E94A" }}>{p.stock}</div>
               </div>
               <Btn onClick={() => add(p.id)} size="sm">Add to Cart</Btn>
             </div>
@@ -167,9 +167,9 @@ export function ProductCatalog() {
         <div className="fixed inset-0 z-40" onClick={() => setCartOpen(false)}>
           <div className="absolute inset-0 bg-black/30" />
           <div
-            className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#1A1A1A] p-5 overflow-y-auto"
+            className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#16161D] p-5 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            style={{ borderLeft: "1px solid #2E2E2E" }}
+            style={{ borderLeft: "1px solid #26262F" }}
           >
             <div className="flex items-center justify-between mb-5">
               <h2 style={{ fontSize: 16 }}>Cart</h2>
@@ -178,7 +178,7 @@ export function ProductCatalog() {
             {cartItems.length === 0 && <div style={{ fontSize: 12, color: "#9ca3af" }}>Cart is empty</div>}
             <div className="space-y-3">
               {cartItems.map((i) => (
-                <div key={i.p.id} className="flex justify-between gap-2 pb-3" style={{ borderBottom: "0.5px solid #2E2E2E" }}>
+                <div key={i.p.id} className="flex justify-between gap-2 pb-3" style={{ borderBottom: "0.5px solid #26262F" }}>
                   <div>
                     <div style={{ fontSize: 12 }}>{i.p.name}</div>
                     <div style={{ fontSize: 11, color: "#9ca3af" }}>{fmtINR(i.p.price)} × {i.q}</div>
@@ -231,7 +231,7 @@ export function MyOrders() {
           </thead>
           <tbody>
             {DEALER_ORDERS.map((o) => (
-              <tr key={o.id} style={{ borderTop: "0.5px solid #2E2E2E" }}>
+              <tr key={o.id} style={{ borderTop: "0.5px solid #26262F" }}>
                 <td className="py-2.5 pr-3">{o.id}</td>
                 <td className="py-2.5 pr-3" style={{ color: "#9ca3af" }}>{o.date}</td>
                 <td className="py-2.5 pr-3">{o.items}</td>
@@ -272,12 +272,12 @@ export function POSEntry() {
           <div>
             <label className="stat-label block mb-1">Date</label>
             <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })}
-              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }} />
+              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13 }} />
           </div>
           <div>
             <label className="stat-label block mb-1">Product (SKU)</label>
             <select value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })}
-              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}>
+              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}>
               {PRODUCTS.map((p) => <option key={p.id}>{p.name}</option>)}
             </select>
           </div>
@@ -285,12 +285,12 @@ export function POSEntry() {
             <div>
               <label className="stat-label block mb-1">Quantity</label>
               <input type="number" min={1} value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })}
-                className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }} />
+                className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13 }} />
             </div>
             <div>
               <label className="stat-label block mb-1">Vehicle Type</label>
               <select value={form.vehicle} onChange={(e) => setForm({ ...form, vehicle: e.target.value })}
-                className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}>
+                className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}>
                 <option>Car</option><option>Bike</option><option>Commercial</option>
               </select>
             </div>
@@ -298,7 +298,7 @@ export function POSEntry() {
           <div>
             <label className="stat-label block mb-1">Notes (optional)</label>
             <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3}
-              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }} />
+              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13 }} />
           </div>
           <Btn type="submit">Log Sale</Btn>
         </form>
@@ -313,7 +313,7 @@ export function POSEntry() {
             </thead>
             <tbody>
               {logs.map((l, i) => (
-                <tr key={i} style={{ borderTop: "0.5px solid #2E2E2E" }}>
+                <tr key={i} style={{ borderTop: "0.5px solid #26262F" }}>
                   <td className="py-2">{l.sku}</td><td className="py-2">{l.qty}</td>
                   <td className="py-2">{l.vehicle}</td><td className="py-2" style={{ color: "#9ca3af" }}>{l.notes || "—"}</td>
                 </tr>
@@ -347,7 +347,7 @@ export function DealerOrdersAdmin() {
           </thead>
           <tbody>
             {REGIONAL_ORDERS.map((o) => (
-              <tr key={o.id} style={{ borderTop: "0.5px solid #2E2E2E" }}>
+              <tr key={o.id} style={{ borderTop: "0.5px solid #26262F" }}>
                 <td className="py-2.5 pr-3">{o.dealer}</td>
                 <td className="py-2.5 pr-3" style={{ color: "#9ca3af" }}>{o.location}</td>
                 <td className="py-2.5 pr-3">{o.id}</td>
@@ -388,7 +388,7 @@ export function SecondarySales() {
                 </div>
                 <div className="h-2 rounded-full mt-1" style={{ background: "#2A2A2A" }}>
                   <div className="h-full rounded-full"
-                    style={{ width: `${(s.units / max) * 100}%`, background: s.type === "auto" ? "#c00000" : "#22a850" }} />
+                    style={{ width: `${(s.units / max) * 100}%`, background: s.type === "auto" ? "#c00000" : "#B8E94A" }} />
                 </div>
               </div>
             ))}
@@ -403,7 +403,7 @@ export function SecondarySales() {
                 <div className="flex items-center gap-2">
                   <span style={{
                     width: 8, height: 8, borderRadius: "50%",
-                    background: r.activity === "high" ? "#22a850" : r.activity === "medium" ? "#ef9f27" : "#c00000",
+                    background: r.activity === "high" ? "#B8E94A" : r.activity === "medium" ? "#ef9f27" : "#c00000",
                   }} />
                   <span style={{ fontSize: 13 }}>{r.name}</span>
                 </div>
@@ -424,8 +424,8 @@ export function SecondarySales() {
             "14 dealers in Maharashtra have not logged POS data in 7 days. Follow-up recommended.",
             "Powerzone 45Ah stock-out predicted in Tamil Nadu within 12 days at current sell rate.",
           ].map((t, i) => (
-            <div key={i} className="flex items-start gap-2 p-2 rounded bg-[#1A1A1A]" style={{ border: "0.5px solid #3A3470" }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#534ab7", marginTop: 6, flexShrink: 0 }} />
+            <div key={i} className="flex items-start gap-2 p-2 rounded bg-[#16161D]" style={{ border: "0.5px solid #3D3FA8" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5B5BF5", marginTop: 6, flexShrink: 0 }} />
               <div className="flex-1" style={{ fontSize: 12 }}>{t}</div>
               <Btn variant="ghost" size="sm">Dismiss</Btn>
               <Btn variant="purple" size="sm">Take Action</Btn>
@@ -446,7 +446,7 @@ export function SecondarySales() {
           </thead>
           <tbody>
             {STOCKOUT_ALERTS.map((a, i) => (
-              <tr key={i} style={{ borderTop: "0.5px solid #2E2E2E" }}>
+              <tr key={i} style={{ borderTop: "0.5px solid #26262F" }}>
                 <td className="py-2.5 pr-3">{a.dealer}</td>
                 <td className="py-2.5 pr-3" style={{ color: "#9ca3af" }}>{a.region}</td>
                 <td className="py-2.5 pr-3">{a.sku}</td>
@@ -491,7 +491,7 @@ export function AdminDashboard() {
             ))}
           </div>
         </div>
-        <div className="card-base" style={{ borderTop: "2px solid #22a850" }}>
+        <div className="card-base" style={{ borderTop: "2px solid #B8E94A" }}>
           <div className="stat-label mb-3">Industrial — customer mix</div>
           <div className="space-y-2.5">
             {[
@@ -504,7 +504,7 @@ export function AdminDashboard() {
                   <span>{x.c}</span><span>{x.v}</span>
                 </div>
                 <div className="h-1.5 rounded-full mt-1" style={{ background: "#2A2A2A" }}>
-                  <div className="h-full rounded-full" style={{ width: `${x.share}%`, background: "#22a850" }} />
+                  <div className="h-full rounded-full" style={{ width: `${x.share}%`, background: "#B8E94A" }} />
                 </div>
               </div>
             ))}
@@ -518,8 +518,8 @@ export function AdminDashboard() {
             "Indus Towers contract INDT-2024-002 will exhaust 3 weeks before expiry at current rate.",
             "8 sites at Critical risk — total 32 units; estimated 30-day replacement value ₹6.8 L.",
           ].map((t, i) => (
-            <div key={i} className="flex items-start gap-2 p-2 rounded bg-[#1A1A1A]" style={{ border: "0.5px solid #3A3470" }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#534ab7", marginTop: 6 }} />
+            <div key={i} className="flex items-start gap-2 p-2 rounded bg-[#16161D]" style={{ border: "0.5px solid #3D3FA8" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5B5BF5", marginTop: 6 }} />
               <div className="flex-1" style={{ fontSize: 12 }}>{t}</div>
             </div>
           ))}
@@ -565,7 +565,7 @@ export function MySites() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-4">
         {SITES.map((s) => (
           <div key={s.id} className="card-base" style={{
-            borderTop: `2px solid ${s.status === "Critical" ? "#c00000" : s.status === "At Risk" ? "#ef9f27" : "#22a850"}`,
+            borderTop: `2px solid ${s.status === "Critical" ? "#c00000" : s.status === "At Risk" ? "#ef9f27" : "#B8E94A"}`,
           }}>
             <div className="flex justify-between items-start mb-2">
               <div>
@@ -590,7 +590,7 @@ export function MySites() {
               </div>
               <div className="h-1.5 rounded-full" style={{ background: "#2A2A2A" }}>
                 <div className="h-full rounded-full"
-                  style={{ width: `${s.lifeLeft}%`, background: s.lifeLeft < 30 ? "#c00000" : s.lifeLeft < 60 ? "#ef9f27" : "#22a850" }} />
+                  style={{ width: `${s.lifeLeft}%`, background: s.lifeLeft < 30 ? "#c00000" : s.lifeLeft < 60 ? "#ef9f27" : "#B8E94A" }} />
               </div>
             </div>
             <div className="mt-3 flex gap-2">
@@ -604,9 +604,9 @@ export function MySites() {
       {openSite && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setOpenSite(null)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-[#1A1A1A] w-full sm:max-w-3xl rounded-t-xl sm:rounded-xl max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()} style={{ border: "0.5px solid #2E2E2E" }}>
-            <div className="flex justify-between items-center px-5 py-4" style={{ borderBottom: "0.5px solid #2E2E2E" }}>
+          <div className="relative bg-[#16161D] w-full sm:max-w-3xl rounded-t-xl sm:rounded-xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()} style={{ border: "0.5px solid #26262F" }}>
+            <div className="flex justify-between items-center px-5 py-4" style={{ borderBottom: "0.5px solid #26262F" }}>
               <div>
                 <h2 style={{ fontSize: 16 }}>{SITES.find((s) => s.id === openSite)?.name}</h2>
                 <div style={{ fontSize: 11, color: "#9ca3af" }}>Battery unit detail</div>
@@ -624,7 +624,7 @@ export function MySites() {
                 </thead>
                 <tbody>
                   {SITE_UNITS[openSite].map((u) => (
-                    <tr key={u.unitId} style={{ borderTop: "0.5px solid #2E2E2E" }}>
+                    <tr key={u.unitId} style={{ borderTop: "0.5px solid #26262F" }}>
                       <td className="py-2.5 pr-3">{u.unitId}</td>
                       <td className="py-2.5 pr-3">{u.model}</td>
                       <td className="py-2.5 pr-3" style={{ color: "#9ca3af" }}>{u.installed}</td>
@@ -632,7 +632,7 @@ export function MySites() {
                       <td className="py-2.5 pr-3" style={{ minWidth: 140 }}>
                         <div className="h-1.5 rounded-full" style={{ background: "#2A2A2A" }}>
                           <div className="h-full rounded-full"
-                            style={{ width: `${u.lifeUsed}%`, background: u.lifeUsed > 80 ? "#c00000" : u.lifeUsed > 60 ? "#ef9f27" : "#22a850" }} />
+                            style={{ width: `${u.lifeUsed}%`, background: u.lifeUsed > 80 ? "#c00000" : u.lifeUsed > 60 ? "#ef9f27" : "#B8E94A" }} />
                         </div>
                         <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{u.lifeUsed}%</div>
                       </td>
@@ -656,7 +656,7 @@ function ServiceRequestModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
-      <div className="relative bg-[#1A1A1A] w-full max-w-md rounded-xl p-5" onClick={(e) => e.stopPropagation()} style={{ border: "0.5px solid #2E2E2E" }}>
+      <div className="relative bg-[#16161D] w-full max-w-md rounded-xl p-5" onClick={(e) => e.stopPropagation()} style={{ border: "0.5px solid #26262F" }}>
         <div className="flex justify-between items-center mb-4">
           <h2 style={{ fontSize: 16 }}>Raise Service Request</h2>
           <button onClick={onClose}><X size={16} /></button>
@@ -671,33 +671,33 @@ function ServiceRequestModal({ onClose }: { onClose: () => void }) {
         >
           <div>
             <label className="stat-label block mb-1">Site</label>
-            <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}>
+            <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}>
               {SITES.map((s) => <option key={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div>
             <label className="stat-label block mb-1">Unit ID</label>
-            <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}>
+            <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}>
               <option>U-NCR041-01</option><option>U-NCR041-02</option><option>U-MH117-01</option>
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="stat-label block mb-1">Request Type</label>
-              <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}>
+              <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}>
                 <option>Inspection</option><option>Replacement</option><option>Emergency</option>
               </select>
             </div>
             <div>
               <label className="stat-label block mb-1">Priority</label>
-              <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}>
+              <select className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}>
                 <option>Normal</option><option>High</option><option>Urgent</option>
               </select>
             </div>
           </div>
           <div>
             <label className="stat-label block mb-1">Description</label>
-            <textarea rows={3} className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }} />
+            <textarea rows={3} className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13 }} />
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Btn variant="ghost" size="sm" onClick={onClose}>Cancel</Btn>
@@ -736,7 +736,7 @@ export function IAMFleetHealth() {
           </thead>
           <tbody>
             {ALL_FLEET_SITES.map((s, i) => (
-              <tr key={i} style={{ borderTop: "0.5px solid #2E2E2E" }}>
+              <tr key={i} style={{ borderTop: "0.5px solid #26262F" }}>
                 <td className="py-2.5 pr-3">{s.customer}</td>
                 <td className="py-2.5 pr-3">{s.site}</td>
                 <td className="py-2.5 pr-3" style={{ color: "#9ca3af" }}>{s.location}</td>
@@ -831,7 +831,7 @@ export function MyContracts() {
           const days = daysToExpiry(c.end);
           const urgent = days < 60;
           return (
-            <div key={c.id} className="card-base" style={{ borderTop: urgent ? "2px solid #ef9f27" : "2px solid #22a850" }}>
+            <div key={c.id} className="card-base" style={{ borderTop: urgent ? "2px solid #ef9f27" : "2px solid #B8E94A" }}>
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <div style={{ fontSize: 14 }}>{c.id}</div>
@@ -849,17 +849,17 @@ export function MyContracts() {
               <div className="mt-3">
                 <div className="h-1.5 rounded-full" style={{ background: "#2A2A2A" }}>
                   <div className="h-full rounded-full"
-                    style={{ width: `${(c.consumed / c.total) * 100}%`, background: urgent ? "#ef9f27" : "#22a850" }} />
+                    style={{ width: `${(c.consumed / c.total) * 100}%`, background: urgent ? "#ef9f27" : "#B8E94A" }} />
                 </div>
                 <div className="flex justify-between mt-1" style={{ fontSize: 10, color: "#9ca3af" }}>
                   <span>{c.start}</span><span>{c.end}</span>
                 </div>
               </div>
               {c.id === "INDT-2024-002" && (
-                <div className="mt-3 p-2.5 rounded" style={{ background: "#14142A", border: "1px solid #3A3470" }}>
+                <div className="mt-3 p-2.5 rounded" style={{ background: "#161734", border: "1px solid #3D3FA8" }}>
                   <div className="flex items-start gap-2">
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#534ab7", marginTop: 5 }} />
-                    <div style={{ fontSize: 11, color: "#AFA9EC" }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5B5BF5", marginTop: 5 }} />
+                    <div style={{ fontSize: 11, color: "#C7C9FF" }}>
                       At current consumption rate, this contract will be exhausted 3 weeks before expiry. Consider raising a new contract or emergency order.
                     </div>
                   </div>
@@ -901,7 +901,7 @@ export function PlaceReleaseOrder() {
           <div>
             <label className="stat-label block mb-1">Contract</label>
             <select value={contractId} onChange={(e) => setContractId(e.target.value)}
-              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}>
+              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}>
               {mine.map((c) => <option key={c.id} value={c.id}>{c.id} — {c.product}</option>)}
             </select>
           </div>
@@ -909,25 +909,25 @@ export function PlaceReleaseOrder() {
             <div>
               <label className="stat-label block mb-1">Delivery Site</label>
               <select value={site} onChange={(e) => setSite(e.target.value)}
-                className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#1A1A1A" }}>
+                className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#16161D" }}>
                 {SITES.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             <div>
               <label className="stat-label block mb-1">Requested Delivery Date</label>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }} />
+                className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13 }} />
             </div>
           </div>
           <div>
             <label className="stat-label block mb-1">Product</label>
             <input value={contract.product} disabled
-              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13, background: "#2A2A2A" }} />
+              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13, background: "#2A2A2A" }} />
           </div>
           <div>
             <label className="stat-label block mb-1">Quantity</label>
             <input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }} />
+              className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13 }} />
             {overage && (
               <div style={{ fontSize: 11, color: "#c00000", marginTop: 4 }}>
                 Quantity exceeds contract balance ({contract.remaining} units remaining).
@@ -936,19 +936,19 @@ export function PlaceReleaseOrder() {
           </div>
           <div>
             <label className="stat-label block mb-1">Special Instructions</label>
-            <textarea rows={3} className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #2E2E2E", fontSize: 13 }} />
+            <textarea rows={3} className="w-full px-3 py-2 rounded-md outline-none" style={{ border: "0.5px solid #26262F", fontSize: 13 }} />
           </div>
           <Btn type="submit" disabled={overage}>Submit Release Order</Btn>
         </form>
 
-        <div className="card-base h-fit" style={{ borderTop: "2px solid #534ab7" }}>
+        <div className="card-base h-fit" style={{ borderTop: "2px solid #5B5BF5" }}>
           <div className="stat-label mb-3">Order Summary</div>
           <div className="space-y-2" style={{ fontSize: 12 }}>
             <div className="flex justify-between"><span style={{ color: "#9ca3af" }}>Contract</span><span>{contract.id}</span></div>
             <div className="flex justify-between"><span style={{ color: "#9ca3af" }}>Product</span><span>{contract.product}</span></div>
             <div className="flex justify-between"><span style={{ color: "#9ca3af" }}>Rate</span><span>{fmtINR(contract.rate)}/unit</span></div>
             <div className="flex justify-between"><span style={{ color: "#9ca3af" }}>Quantity</span><span>{qty}</span></div>
-            <div className="flex justify-between" style={{ borderTop: "0.5px solid #2E2E2E", paddingTop: 8, fontSize: 14 }}>
+            <div className="flex justify-between" style={{ borderTop: "0.5px solid #26262F", paddingTop: 8, fontSize: 14 }}>
               <span>Order Total</span><span>{fmtINRLakh(qty * contract.rate)}</span>
             </div>
             <div className="flex justify-between" style={{ color: "#9ca3af" }}><span>Balance after</span><span>{contract.remaining - qty} units</span></div>
@@ -982,9 +982,9 @@ export function AllContracts() {
           <tbody>
             {CONTRACTS.map((c) => {
               const days = daysToExpiry(c.end);
-              const color = days < 30 ? "#c00000" : days < 60 ? "#ef9f27" : "#22a850";
+              const color = days < 30 ? "#c00000" : days < 60 ? "#ef9f27" : "#B8E94A";
               return (
-                <tr key={c.id} style={{ borderTop: "0.5px solid #2E2E2E" }}>
+                <tr key={c.id} style={{ borderTop: "0.5px solid #26262F" }}>
                   <td className="py-2.5 pr-3">{c.customer}</td>
                   <td className="py-2.5 pr-3">{c.id}</td>
                   <td className="py-2.5 pr-3">{c.product}</td>
