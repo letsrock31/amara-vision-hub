@@ -1399,6 +1399,35 @@ export function AdminDashboard() {
         <StatCard label="Fleet Sites at Risk" value="8" change="Across 3 customers" accent="amber" onClick={() => setView("fleet-health")} />
         <StatCard label="Contracts Expiring (60d)" value="3" change="₹2.34 Cr at risk" accent="amber" onClick={() => setView("contracts")} />
       </div>
+      <div className="card-base mb-5">
+        <button onClick={() => setRegionOpen((o) => !o)} className="w-full flex justify-between items-center">
+          <div className="stat-label">Regional Performance This Month</div>
+          {regionOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        {regionOpen && (
+          <div className="overflow-x-auto mt-3">
+            <table className="w-full" style={{ fontSize: 13 }}>
+              <thead style={{ background: "#F9FAFB" }}>
+                <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                  <th className="py-2 px-3">Region</th><th className="py-2 px-3">Active Dealers</th>
+                  <th className="py-2 px-3">Orders</th><th className="py-2 px-3">Total Value</th><th className="py-2 px-3">Dormant Dealers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {regionRows.map((x) => (
+                  <tr key={x.r} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{x.r}</td>
+                    <td className="py-2 px-3">{x.d}</td>
+                    <td className="py-2 px-3">{x.o}</td>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>{x.v}</td>
+                    <td className="py-2 px-3" style={{ color: "#C00000" }}>{x.dor}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
       <div className="grid lg:grid-cols-2 gap-4 mb-5">
         <div className="card-base" style={{ borderTop: "3px solid #C00000" }}>
           <div className="stat-label mb-3">Dealer channel — top regions</div>
