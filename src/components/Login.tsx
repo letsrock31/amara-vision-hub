@@ -25,7 +25,7 @@ export function Login() {
             value={selected}
             onChange={(e) => setSelected(e.target.value as Profile)}
             className="w-full px-3 py-2 rounded-md outline-none"
-            style={{ border: "0.5px solid #2E2E2E", background: "#1A1A1A", fontSize: 14 }}
+            style={{ border: "1px solid #2E2E2E", background: "#1A1A1A", fontSize: 14, color: "#FFFFFF" }}
           >
             <option value="">Choose a profile...</option>
             {PROFILES.map((p) => (
