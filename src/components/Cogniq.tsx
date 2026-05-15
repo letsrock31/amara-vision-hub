@@ -64,20 +64,21 @@ export function Cogniq() {
     <>
       {open && (
         <div
-          className="fixed bottom-20 right-4 md:right-6 z-40 flex flex-col"
+          className="fixed bottom-20 right-4 md:right-6 z-50 flex flex-col"
           style={{
             width: "min(380px, calc(100vw - 32px))",
             height: "min(540px, calc(100vh - 120px))",
-            background: "#fff",
-            border: "1px solid #cecbf6",
+            maxHeight: "65vh",
+            background: "#14142A",
+            border: "1px solid #3A3470",
             borderRadius: 12,
-            boxShadow: "0 10px 40px rgba(83,74,183,0.18)",
+            boxShadow: "0 10px 40px rgba(83,74,183,0.45)",
           }}
         >
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #e5e5e0" }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #2E2E2E" }}>
             <div className="flex items-center gap-2">
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#534ab7" }} />
-              <span style={{ fontSize: 13, color: "#111" }}>Cogniq AI</span>
+              <span style={{ fontSize: 13, color: "#FFFFFF" }}>Cogniq AI</span>
               <span style={{ fontSize: 10, color: "#9ca3af" }}>Powered by Cogniq</span>
             </div>
             <button onClick={() => setOpen(false)} aria-label="Close">
@@ -97,9 +98,9 @@ export function Cogniq() {
                   className="px-3 py-2 rounded-lg max-w-[85%]"
                   style={{
                     fontSize: 12,
-                    background: m.role === "user" ? "#fef2f2" : "#f5f4ff",
-                    color: m.role === "user" ? "#c00000" : "#534ab7",
-                    border: m.role === "ai" ? "1px solid #cecbf6" : "none",
+                    background: m.role === "user" ? "#2E0D0D" : "#1A1A3A",
+                    color: m.role === "user" ? "#C00000" : "#AFA9EC",
+                    border: m.role === "ai" ? "1px solid #3A3470" : "none",
                   }}
                 >
                   {m.text}
@@ -108,7 +109,7 @@ export function Cogniq() {
             ))}
           </div>
 
-          <div className="p-3 space-y-2" style={{ borderTop: "1px solid #e5e5e0" }}>
+          <div className="p-3 space-y-2" style={{ borderTop: "1px solid #2E2E2E" }}>
             <div className="flex flex-wrap gap-1.5">
               {chips.map((c) => (
                 <button
@@ -117,9 +118,9 @@ export function Cogniq() {
                   className="px-2 py-1 rounded-full"
                   style={{
                     fontSize: 10,
-                    background: "#f5f4ff",
-                    color: "#534ab7",
-                    border: "1px solid #cecbf6",
+                    background: "#1A1A3A",
+                    color: "#AFA9EC",
+                    border: "0.5px solid #3A3470",
                   }}
                 >
                   {c.q.length > 50 ? c.q.slice(0, 48) + "…" : c.q}
@@ -138,7 +139,7 @@ export function Cogniq() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask Cogniq anything..."
                 className="flex-1 px-3 py-2 rounded-md outline-none"
-                style={{ border: "1px solid #cecbf6", fontSize: 12, background: "#fff" }}
+                style={{ border: "1px solid #3A3470", fontSize: 12, background: "#1A1A1A", color: "#FFFFFF" }}
               />
               <button
                 type="submit"
@@ -155,8 +156,8 @@ export function Cogniq() {
 
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-40 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg"
-        style={{ background: "#534ab7" }}
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg"
+        style={{ background: "#534AB7" }}
         aria-label="Open Cogniq AI"
       >
         <MessageCircle size={20} />

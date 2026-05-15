@@ -4,8 +4,9 @@ import {
   LayoutDashboard, Package, ShoppingCart, FileText, Building2,
   TrendingUp, Activity, ScrollText, Home, ClipboardList, MapPin, Truck, BarChart3,
 } from "lucide-react";
+import { useState } from "react";
 
-type NavItem = { id: string; label: string; icon: React.ComponentType<{ size?: number }>; section: string };
+type NavItem = { id: string; label: string; icon: React.ComponentType<{ size?: number; color?: string }>; section: string };
 
 export const NAV_BY_PROFILE: Record<Profile, NavItem[]> = {
   "ARE&M Admin": [
@@ -38,6 +39,31 @@ export const NAV_BY_PROFILE: Record<Profile, NavItem[]> = {
   ],
 };
 
+function NavBtn({ item, active, onClick }: { item: NavItem; active: boolean; onClick: () => void }) {
+  const Icon = item.icon;
+  const [hover, setHover] = useState(false);
+  const color = active ? "#C00000" : hover ? "#CCCCCC" : "#666666";
+  const iconColor = active ? "#C00000" : hover ? "#CCCCCC" : "#555555";
+  const bg = active ? "#1A1A1A" : hover ? "#1A1A1A" : "transparent";
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      className="w-full flex items-center gap-2.5 px-4 py-2 transition-colors"
+      style={{
+        borderLeft: active ? "2px solid #C00000" : "2px solid transparent",
+        background: bg,
+        color,
+        fontSize: 12,
+      }}
+    >
+      <Icon size={14} color={iconColor} />
+      <span>{item.label}</span>
+    </button>
+  );
+}
+
 export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose?: () => void }) {
   const { profile, view, setView } = useApp();
   if (!profile) return null;
@@ -47,35 +73,23 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
   const content = (
     <>
       <div className="px-4 py-4">
-        <div style={{ fontSize: 9, textTransform: "uppercase", color: "#9ca3af", letterSpacing: "0.05em" }}>
+        <div style={{ fontSize: 9, textTransform: "uppercase", color: "#444444", letterSpacing: "0.05em" }}>
           {profile}
         </div>
       </div>
       {sections.map((sec) => (
         <div key={sec} className="mb-3">
-          <div className="px-4 mb-1.5" style={{ fontSize: 9, textTransform: "uppercase", color: "#9ca3af", letterSpacing: "0.05em" }}>
+          <div className="px-4 mb-1.5" style={{ fontSize: 9, textTransform: "uppercase", color: "#444444", letterSpacing: "0.05em" }}>
             {sec}
           </div>
-          {items.filter((i) => i.section === sec).map((item) => {
-            const Icon = item.icon;
-            const active = view === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => { setView(item.id); onClose?.(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2 transition-colors"
-                style={{
-                  borderLeft: active ? "2px solid #c00000" : "2px solid transparent",
-                  background: active ? "#fef2f2" : "transparent",
-                  color: active ? "#c00000" : "#6b7280",
-                  fontSize: 12,
-                }}
-              >
-                <Icon size={14} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+          {items.filter((i) => i.section === sec).map((item) => (
+            <NavBtn
+              key={item.id}
+              item={item}
+              active={view === item.id}
+              onClick={() => { setView(item.id); onClose?.(); }}
+            />
+          ))}
         </div>
       ))}
     </>
@@ -83,20 +97,18 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen?: boolean; onClose
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside
         className="hidden md:block fixed left-0 top-[52px] bottom-0 z-30 overflow-y-auto"
-        style={{ width: 180, background: "#fff", borderRight: "1px solid #e5e5e0" }}
+        style={{ width: 180, background: "#111111", borderRight: "0.5px solid #222222" }}
       >
         {content}
       </aside>
-      {/* Mobile drawer */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50" onClick={onClose}>
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-black/50" />
           <aside
             className="absolute left-0 top-[52px] bottom-0 overflow-y-auto"
-            style={{ width: 220, background: "#fff", borderRight: "1px solid #e5e5e0" }}
+            style={{ width: 220, background: "#111111", borderRight: "0.5px solid #222222" }}
             onClick={(e) => e.stopPropagation()}
           >
             {content}
