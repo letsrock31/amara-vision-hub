@@ -1280,7 +1280,7 @@ export function SecondarySales() {
             <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
               <th className="py-2 px-4">Dealer</th><th className="py-2 px-4">Region</th>
               <th className="py-2 px-4">SKU</th><th className="py-2 px-4">Days to Stock-out</th>
-              <th className="py-2 px-4">Current Stock</th><th className="py-2 px-4">Reorder Qty</th><th className="py-2 px-4"></th>
+              <th className="py-2 px-4">Current Stock</th><th className="py-2 px-4">Reorder Qty</th><th className="py-2 px-4"></th><th className="py-2 px-4"></th>
             </tr>
           </thead>
           <tbody>
@@ -1298,6 +1298,9 @@ export function SecondarySales() {
                   ) : (
                     <Btn size="sm" onClick={() => setConfirmRow(i)}>Send Alert</Btn>
                   )}
+                </td>
+                <td className="py-3 px-4">
+                  <Btn size="sm" variant="ghost" onClick={() => { setOrderForRow(i); setOrderQty(a.reorder); setOrderDate(""); }}>Create Order</Btn>
                 </td>
               </tr>
             ))}
