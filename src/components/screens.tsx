@@ -2030,7 +2030,10 @@ export function IAMFleetHealth() {
   const [drawerSite, setDrawerSite] = useState<typeof ALL_FLEET_SITES[number] | null>(null);
   const [srUnit, setSrUnit] = useState<{ siteName: string; unitId: string } | null>(null);
   const [pipelineOpen, setPipelineOpen] = useState(false);
-  const { selectedCustomer, setSelectedCustomer } = useApp();
+  const [historyUnit, setHistoryUnit] = useState<{ unitId: string; model: string; installed: string; isCritical: boolean } | null>(null);
+  const [batchConfirm, setBatchConfirm] = useState(false);
+  const { selectedCustomer, setSelectedCustomer, addServiceRequest, addNotification } = useApp();
+  const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
   const customers = useMemo(() => Array.from(new Set(ALL_FLEET_SITES.map((s) => s.customer))), []);
   const [customer, setCustomer] = useState("All");
