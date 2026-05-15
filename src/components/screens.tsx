@@ -1960,7 +1960,8 @@ export function MySites() {
         ))}
       </div>
 
-      {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
+      {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} initialType={srInitial.type} initialPriority={srInitial.priority} onClose={() => { setSrUnit(null); setSrInitial({}); }} />}
+      {historyUnit && <UnitHistoryModal {...historyUnit} onClose={() => setHistoryUnit(null)} />}
     </div>
   );
 }
