@@ -6,9 +6,10 @@ import {
   fmtINR, fmtINRLakh,
 } from "@/lib/mock-data";
 import { useApp, type CartItem, type DealerOrder } from "@/lib/app-context";
+import { genId } from "@/lib/app-context";
 import { StatCard, StatusBadge, PageHeader, AISuggestions, Btn, FilterBar, Pagination } from "./ui-bits";
 import { Search, ShoppingCart, X, Plus, Minus, ArrowRight, Trash2, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, Phone, Mail, RefreshCw, Receipt, MessageSquare, BarChart2, Pencil, Download } from "lucide-react";
-import { ProductDetailModal, TrackOrderModal, InvoicePanel, ComplaintModal, EscalateModal, ContactDealerCard, StarRating, SkuDetailModal, RegionDetailModal } from "./shared";
+import { ProductDetailModal, TrackOrderModal, InvoicePanel, ComplaintModal, EscalateModal, ContactDealerCard, StarRating, SkuDetailModal, RegionDetailModal, UnitHistoryModal } from "./shared";
 
 const PAGE_SIZE = 8;
 const DELIVERY_ADDRESS = "Shop 14, Chandni Chowk Market, Delhi 110006";
@@ -1667,9 +1668,9 @@ export function RSMDashboard() {
 
 /* =================== INDUSTRIAL CUSTOMER: MY SITES =================== */
 
-function ServiceRequestModal({ siteName, unitId, onClose }: { siteName: string; unitId: string; onClose: () => void }) {
-  const [type, setType] = useState("Inspection");
-  const [priority, setPriority] = useState("Normal");
+function ServiceRequestModal({ siteName, unitId, onClose, initialType, initialPriority }: { siteName: string; unitId: string; onClose: () => void; initialType?: string; initialPriority?: string }) {
+  const [type, setType] = useState(initialType ?? "Inspection");
+  const [priority, setPriority] = useState(initialPriority ?? "Normal");
   const [desc, setDesc] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
   const { addServiceRequest } = useApp();
@@ -1741,7 +1742,7 @@ function ServiceRequestModal({ siteName, unitId, onClose }: { siteName: string; 
   );
 }
 
-function UnitsTable({ siteId, onRaise }: { siteId: string; onRaise: (unitId: string) => void }) {
+function UnitsTable({ siteId, onRaise, onHistory }: { siteId: string; onRaise: (unitId: string) => void; onHistory: (unit: { unitId: string; model: string; installed: string; isCritical: boolean }) => void }) {
   const units = SITE_UNITS[siteId] ?? [];
   return (
     <div className="overflow-x-auto rounded-lg" style={{ border: "1px solid #E5E7EB" }}>
@@ -1751,7 +1752,7 @@ function UnitsTable({ siteId, onRaise }: { siteId: string; onRaise: (unitId: str
             <th className="py-2 px-3">Unit ID</th><th className="py-2 px-3">Model</th>
             <th className="py-2 px-3">Installed</th><th className="py-2 px-3">Age</th>
             <th className="py-2 px-3" style={{ minWidth: 140 }}>Life Used</th>
-            <th className="py-2 px-3">Status</th><th className="py-2 px-3"></th>
+            <th className="py-2 px-3">Status</th><th className="py-2 px-3">History</th><th className="py-2 px-3"></th>
           </tr>
         </thead>
         <tbody>
@@ -1769,6 +1770,7 @@ function UnitsTable({ siteId, onRaise }: { siteId: string; onRaise: (unitId: str
                 <div style={{ fontSize: 10, color: "#4B5563", marginTop: 2 }}>{u.lifeUsed}%</div>
               </td>
               <td className="py-2 px-3"><StatusBadge status={u.status} /></td>
+              <td className="py-2 px-3"><Btn size="sm" variant="ghost" onClick={() => onHistory({ unitId: u.unitId, model: u.model, installed: u.installed, isCritical: u.status === "Critical" })}>History</Btn></td>
               <td className="py-2 px-3"><Btn size="sm" onClick={() => onRaise(u.unitId)}>Raise SR</Btn></td>
             </tr>
           ))}
@@ -1782,17 +1784,25 @@ export function MySites() {
   const [openSiteId, setOpenSiteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("All");
   const [srUnit, setSrUnit] = useState<{ siteName: string; unitId: string } | null>(null);
+  const [srInitial, setSrInitial] = useState<{ type?: string; priority?: string }>({});
+  const [historyUnit, setHistoryUnit] = useState<{ unitId: string; model: string; installed: string; isCritical: boolean } | null>(null);
+  const { serviceRequests, updateServiceRequest } = useApp();
+  const [commentSr, setCommentSr] = useState<string | null>(null);
+  const [commentText, setCommentText] = useState("");
   const totalUnits = SITES.reduce((s, x) => s + x.units, 0);
   const atRisk = SITES.filter((s) => s.status === "At Risk").reduce((s, x) => s + x.units, 0);
   const critical = SITES.filter((s) => s.status === "Critical").reduce((s, x) => s + x.units, 0);
 
   const filtered = SITES.filter((s) => statusFilter === "All" || s.status === statusFilter);
+  const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
   if (openSiteId) {
     const site = SITES.find((s) => s.id === openSiteId)!;
     const units = SITE_UNITS[openSiteId] ?? [];
     const siteCritical = units.filter((u) => u.status === "Critical").length;
     const siteRisk = units.filter((u) => u.status === "At Risk").length;
+    const firstUnitId = units[0]?.unitId ?? site.id + "-01";
+    const siteRequests = serviceRequests.filter((s) => s.siteName === site.id || s.siteName === site.name);
     return (
       <div>
         <button onClick={() => setOpenSiteId(null)} className="flex items-center gap-1.5 mb-3" style={{ fontSize: 13, color: "#2B31B8", fontWeight: 600 }}>
@@ -1808,11 +1818,71 @@ export function MySites() {
           <StatCard label="At Risk Units" value={String(siteRisk)} accent="amber" />
           <StatCard label="Critical Units" value={String(siteCritical)} accent="crimson" />
         </div>
-        <div className="card-base p-4">
-          <div className="stat-label mb-3">Battery Units</div>
-          <UnitsTable siteId={openSiteId} onRaise={(unitId) => setSrUnit({ siteName: site.name, unitId })} />
+        <div className="flex gap-2 flex-wrap mb-4">
+          <Btn variant="ghost" size="sm" onClick={() => toast.success("SiteReport_" + site.id + "_May2026.pdf downloaded")}><Download size={12} /> Download Report</Btn>
+          <Btn variant="ghost" size="sm" onClick={() => { setSrInitial({ type: "Inspection" }); setSrUnit({ siteName: site.name, unitId: firstUnitId }); }}><Search size={12} /> Request Inspection</Btn>
+          <Btn variant="crimson" size="sm" onClick={() => { setSrInitial({ type: "Emergency", priority: "Urgent" }); setSrUnit({ siteName: site.name, unitId: firstUnitId }); }}><AlertTriangle size={12} /> Emergency Replacement</Btn>
         </div>
-        {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
+        <div className="card-base p-4 mb-4">
+          <div className="stat-label mb-3">Battery Units</div>
+          <UnitsTable
+            siteId={openSiteId}
+            onRaise={(unitId) => { setSrInitial({}); setSrUnit({ siteName: site.name, unitId }); }}
+            onHistory={(u) => setHistoryUnit(u)}
+          />
+        </div>
+        <div className="card-base p-4 mb-4">
+          <div className="stat-label mb-3">Service Requests for This Site</div>
+          {siteRequests.length === 0 ? (
+            <div style={{ fontSize: 13, color: "#6B7280" }}>No service requests for this site yet.</div>
+          ) : (
+            <div className="overflow-x-auto rounded" style={{ border: "1px solid #E5E7EB" }}>
+              <table className="w-full" style={{ fontSize: 12 }}>
+                <thead style={{ background: "#F9FAFB" }}>
+                  <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+                    <th className="py-2 px-3">SR ID</th><th className="py-2 px-3">Unit ID</th><th className="py-2 px-3">Type</th>
+                    <th className="py-2 px-3">Priority</th><th className="py-2 px-3">Status</th><th className="py-2 px-3">Raised</th><th className="py-2 px-3"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {siteRequests.map((s) => (
+                    <React.Fragment key={s.id}>
+                      <tr style={{ borderTop: "1px solid #E5E7EB" }}>
+                        <td className="py-2 px-3" style={{ fontWeight: 600 }}>{s.id}</td>
+                        <td className="py-2 px-3">{s.unitId}</td>
+                        <td className="py-2 px-3">{s.type}</td>
+                        <td className="py-2 px-3">{s.priority}</td>
+                        <td className="py-2 px-3"><StatusBadge status={s.status || "Submitted"} /></td>
+                        <td className="py-2 px-3" style={{ color: "#4B5563" }}>{s.raised || today}</td>
+                        <td className="py-2 px-3"><Btn size="sm" variant="ghost" onClick={() => { setCommentSr(s.id); setCommentText(""); }}>Add Comment</Btn></td>
+                      </tr>
+                      {commentSr === s.id && (
+                        <tr style={{ background: "#F9FAFB" }}>
+                          <td colSpan={7} className="p-3">
+                            <textarea rows={2} value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                              placeholder="Add a comment..."
+                              style={{ width: "100%", border: "1px solid #D1D5DB", borderRadius: 6, padding: "6px 8px", fontSize: 13 }} />
+                            <div className="flex gap-2 mt-2 items-center">
+                              <Btn size="sm" onClick={() => {
+                                if (!commentText.trim()) return;
+                                updateServiceRequest(s.id, { comments: [...(s.comments ?? []), { text: commentText, date: today }] });
+                                setCommentSr(null); setCommentText("");
+                                toast.success("Comment added");
+                              }}>Submit Comment</Btn>
+                              <button onClick={() => { setCommentSr(null); setCommentText(""); }} style={{ fontSize: 12, color: "#4B5563" }}>Cancel</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} initialType={srInitial.type} initialPriority={srInitial.priority} onClose={() => { setSrUnit(null); setSrInitial({}); }} />}
+        {historyUnit && <UnitHistoryModal {...historyUnit} onClose={() => setHistoryUnit(null)} />}
       </div>
     );
   }
@@ -1890,7 +1960,8 @@ export function MySites() {
         ))}
       </div>
 
-      {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
+      {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} initialType={srInitial.type} initialPriority={srInitial.priority} onClose={() => { setSrUnit(null); setSrInitial({}); }} />}
+      {historyUnit && <UnitHistoryModal {...historyUnit} onClose={() => setHistoryUnit(null)} />}
     </div>
   );
 }
@@ -1959,7 +2030,10 @@ export function IAMFleetHealth() {
   const [drawerSite, setDrawerSite] = useState<typeof ALL_FLEET_SITES[number] | null>(null);
   const [srUnit, setSrUnit] = useState<{ siteName: string; unitId: string } | null>(null);
   const [pipelineOpen, setPipelineOpen] = useState(false);
-  const { selectedCustomer, setSelectedCustomer } = useApp();
+  const [historyUnit, setHistoryUnit] = useState<{ unitId: string; model: string; installed: string; isCritical: boolean } | null>(null);
+  const [batchConfirm, setBatchConfirm] = useState(false);
+  const { selectedCustomer, setSelectedCustomer, addServiceRequest, addNotification } = useApp();
+  const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
   const customers = useMemo(() => Array.from(new Set(ALL_FLEET_SITES.map((s) => s.customer))), []);
   const [customer, setCustomer] = useState("All");
@@ -2048,7 +2122,11 @@ export function IAMFleetHealth() {
             <span style={{ fontSize: 12, color: "#4B5563" }}>Risk: {drawerSite.risk} · Days since inspection: {drawerSite.days}</span>
           </div>
           {SITE_UNITS[drawerSite.site] ? (
-            <UnitsTable siteId={drawerSite.site} onRaise={(unitId) => setSrUnit({ siteName: drawerSite.site, unitId })} />
+            <UnitsTable
+              siteId={drawerSite.site}
+              onRaise={(unitId) => setSrUnit({ siteName: drawerSite.site, unitId })}
+              onHistory={(u) => setHistoryUnit(u)}
+            />
           ) : (
             <div className="p-4 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", fontSize: 13, color: "#4B5563" }}>
               Unit-level data is being sync'd from the field. {drawerSite.units} units installed.
@@ -2057,6 +2135,17 @@ export function IAMFleetHealth() {
               </div>
             </div>
           )}
+          {(() => {
+            const criticalUnits = SITE_UNITS[drawerSite.site]?.filter((u) => u.status === "Critical") ?? [];
+            if (criticalUnits.length === 0) return null;
+            return (
+              <div className="mt-4">
+                <Btn variant="crimson" size="sm" onClick={() => setBatchConfirm(true)}>
+                  <AlertTriangle size={12} /> Replace All Critical Units ({criticalUnits.length})
+                </Btn>
+              </div>
+            );
+          })()}
           <div className="mt-5">
             <Btn variant="ghost" size="sm" onClick={() => setDrawerSite(null)}>Close</Btn>
           </div>
@@ -2064,7 +2153,33 @@ export function IAMFleetHealth() {
       )}
 
       {srUnit && <ServiceRequestModal siteName={srUnit.siteName} unitId={srUnit.unitId} onClose={() => setSrUnit(null)} />}
+      {historyUnit && <UnitHistoryModal {...historyUnit} onClose={() => setHistoryUnit(null)} />}
       {pipelineOpen && <ReplacementPipelineModal onClose={() => setPipelineOpen(false)} />}
+      {batchConfirm && drawerSite && (() => {
+        const criticalUnits = SITE_UNITS[drawerSite.site]?.filter((u) => u.status === "Critical") ?? [];
+        return (
+          <ConfirmDialog
+            title="Replace All Critical Units"
+            body={<>Create service requests for all <strong>{criticalUnits.length}</strong> critical units at <strong>{drawerSite.site}</strong>?</>}
+            confirmLabel="Create Batch SRs"
+            onCancel={() => setBatchConfirm(false)}
+            onConfirm={() => {
+              const batchRef = "BATCH-" + Math.floor(1000 + Math.random() * 9000);
+              criticalUnits.forEach((u) => {
+                addServiceRequest({
+                  id: genId("SR"), siteName: drawerSite.site, unitId: u.unitId,
+                  type: "Replacement", priority: "Urgent",
+                  description: "Critical life-used threshold exceeded. Batch replacement.",
+                  status: "Submitted", raised: today, ts: Date.now(),
+                });
+              });
+              addNotification("Batch service requests created for " + criticalUnits.length + " critical units at " + drawerSite.site + ". Ref: " + batchRef);
+              toast.success("Batch SRs created. Reference: " + batchRef);
+              setBatchConfirm(false);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -2295,16 +2410,36 @@ function sampleReleaseOrdersFor(contractId: string) {
 
 export function MyContracts() {
   const mine = CONTRACTS.filter((c) => c.customer === "Indus Towers");
-  const { setView, setSelectedContractId } = useApp();
+  const { setView, setSelectedContractId, draftReleaseOrder, setDraftReleaseOrder, addNotification } = useApp();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [trackRo, setTrackRo] = useState<{ id: string; status: string; eta: string } | null>(null);
+  const [invoiceRo, setInvoiceRo] = useState<{ id: string; total: number } | null>(null);
+  const [complaintRo, setComplaintRo] = useState<string | null>(null);
+  const [renewalContract, setRenewalContract] = useState<string | null>(null);
+  const [renewDuration, setRenewDuration] = useState("12 months");
+  const [renewQty, setRenewQty] = useState(0);
+  const [renewNotes, setRenewNotes] = useState("");
+  const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
   const daysToExpiry = (end: string) => {
     const [d, m, y] = end.split(" ");
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].indexOf(m);
     return Math.round((new Date(Number(y), months, Number(d)).getTime() - Date.now()) / 86400000);
   };
+  const renewC = renewalContract ? CONTRACTS.find((c) => c.id === renewalContract) : null;
+  const draftProduct = draftReleaseOrder ? CONTRACTS.find((c) => c.id === draftReleaseOrder.contractId)?.product : null;
 
   return (
     <div>
+      {draftReleaseOrder && (
+        <div className="rounded-lg p-3 mb-3 flex items-center justify-between flex-wrap gap-2"
+          style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", color: "#2B31B8", fontSize: 13 }}>
+          <span>You have a saved draft release order for <strong>{draftProduct ?? "a contract"}</strong>. Continue?</span>
+          <div className="flex gap-2">
+            <Btn size="sm" onClick={() => { setSelectedContractId(draftReleaseOrder.contractId); setView("release-order"); }}>Continue</Btn>
+            <button onClick={() => setDraftReleaseOrder(null)} style={{ fontSize: 12, color: "#4B5563", textDecoration: "underline" }}>Discard</button>
+          </div>
+        </div>
+      )}
       <PageHeader title="My Contracts" sub="Active rate contracts with Amara Raja" />
       <AISuggestions
         items={[
@@ -2344,11 +2479,13 @@ export function MyContracts() {
                   <span>{c.start}</span><span>{c.end}</span>
                 </div>
               </div>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex gap-2 flex-wrap">
                 <Btn variant="ghost" size="sm" onClick={() => setExpanded(isOpen ? null : c.id)}>
                   {isOpen ? <>Hide Orders <ChevronUp size={12} style={{ display: "inline", marginLeft: 4 }} /></> : <>View Orders <ChevronDown size={12} style={{ display: "inline", marginLeft: 4 }} /></>}
                 </Btn>
                 <Btn size="sm" onClick={() => { setSelectedContractId(c.id); setView("release-order"); }}>Place Release Order</Btn>
+                <Btn variant="ghost" size="sm" onClick={() => { setRenewalContract(c.id); setRenewQty(c.total); }}>Renewal</Btn>
+                <Btn variant="ghost" size="sm" onClick={() => toast.success("Contract_" + c.id + ".pdf downloaded")}><Download size={12} /> Download Contract</Btn>
               </div>
               {isOpen && (
                 <div className="mt-4 pt-3" style={{ borderTop: "1px solid #E5E7EB" }}>
@@ -2359,7 +2496,7 @@ export function MyContracts() {
                         <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
                           <th className="py-2 px-3">Order ID</th><th className="py-2 px-3">Date</th>
                           <th className="py-2 px-3">Qty</th><th className="py-2 px-3">Site</th>
-                          <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th>
+                          <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th><th className="py-2 px-3">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2371,6 +2508,13 @@ export function MyContracts() {
                             <td className="py-2 px-3">{r.site}</td>
                             <td className="py-2 px-3"><StatusBadge status={r.status} /></td>
                             <td className="py-2 px-3">{r.eta}</td>
+                            <td className="py-2 px-3">
+                              <div className="flex gap-2">
+                                <button onClick={() => setTrackRo({ id: r.id, status: r.status ?? "Dispatched", eta: r.eta })} aria-label="Track"><Package size={14} color="#534AB7" /></button>
+                                <button onClick={() => setInvoiceRo({ id: r.id, total: r.qty * c.rate })} aria-label="Invoice"><Receipt size={14} color="#534AB7" /></button>
+                                <button onClick={() => setComplaintRo(r.id)} aria-label="Complaint"><MessageSquare size={14} color="#534AB7" /></button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2382,6 +2526,49 @@ export function MyContracts() {
           );
         })}
       </div>
+      {trackRo && <TrackOrderModal orderId={trackRo.id} status={trackRo.status} eta={trackRo.eta} onClose={() => setTrackRo(null)} />}
+      {invoiceRo && <InvoicePanel orderId={invoiceRo.id} total={invoiceRo.total} onClose={() => setInvoiceRo(null)} />}
+      {complaintRo && <ComplaintModal orderId={complaintRo} onClose={() => setComplaintRo(null)} />}
+      {renewC && (
+        <CenterModal widthClass="max-w-md">
+          <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Request Contract Renewal</h3>
+            <button onClick={() => setRenewalContract(null)}><X size={18} /></button>
+          </div>
+          <form
+            className="p-5 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const id = "REQ-" + Math.floor(1000 + Math.random() * 9000);
+              addNotification("Renewal Request " + id + " submitted for " + renewC.id);
+              toast.success("Renewal Request " + id + " submitted. Your account manager will respond within 2 business days.");
+              setRenewalContract(null);
+              setRenewNotes("");
+            }}
+          >
+            <div className="rounded p-3" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB", fontSize: 13 }}>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{renewC.product}</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Total Quantity</span><span>{renewC.total} units</span></div>
+              <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Expiry</span><span>{renewC.end}</span></div>
+            </div>
+            <div><label className="stat-label block mb-1">Proposed Duration</label>
+              <select value={renewDuration} onChange={(e) => setRenewDuration(e.target.value)} style={inp}>
+                <option>6 months</option><option>12 months</option><option>24 months</option>
+              </select>
+            </div>
+            <div><label className="stat-label block mb-1">Proposed Quantity</label>
+              <input type="number" min={1} required value={renewQty} onChange={(e) => setRenewQty(Number(e.target.value))} style={inp} />
+            </div>
+            <div><label className="stat-label block mb-1">Notes</label>
+              <textarea rows={3} value={renewNotes} onChange={(e) => setRenewNotes(e.target.value)} style={inp} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Btn type="button" variant="ghost" size="sm" onClick={() => setRenewalContract(null)}>Cancel</Btn>
+              <Btn type="submit">Submit</Btn>
+            </div>
+          </form>
+        </CenterModal>
+      )}
     </div>
   );
 }
@@ -2551,70 +2738,143 @@ function ContractDetailDrawer({ contractId, onClose }: { contractId: string; onC
   const utilisation = Math.round((c.consumed / c.total) * 100);
   const ros = sampleReleaseOrdersFor(c.id);
   const dayColor = days < 30 ? "#C00000" : days < 60 ? "#EF9F27" : "#15803D";
+  const { addNotification } = useApp();
+  const [amendOpen, setAmendOpen] = useState(false);
+  const [flagged, setFlagged] = useState(false);
+  const [amendField, setAmendField] = useState("Rate Revision");
+  const [amendChange, setAmendChange] = useState("");
+  const [amendJustify, setAmendJustify] = useState("");
+  const [trackRo, setTrackRo] = useState<{ id: string; status: string; eta: string } | null>(null);
+  const [invoiceRo, setInvoiceRo] = useState<{ id: string; total: number } | null>(null);
+  const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
 
   return (
-    <RightDrawer title="Contract Details" sub={c.id} onClose={onClose}>
-      <div className="space-y-1.5 mb-4" style={{ fontSize: 13 }}>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Contract ID</span><span style={{ fontWeight: 700 }}>{c.id}</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Customer</span><span style={{ fontWeight: 600 }}>{c.customer}</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{c.product}</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Agreed Rate</span><span>{fmtINR(c.rate)} / unit</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Total Quantity</span><span>{c.total} units</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Consumed</span><span>{c.consumed} units</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Remaining</span><span style={{ fontWeight: 700 }}>{c.remaining} units</span></div>
-      </div>
-      <div className="mb-4">
-        <div className="flex justify-between mb-1.5" style={{ fontSize: 11, color: "#4B5563", fontWeight: 600 }}>
-          <span>UTILISATION</span><span>{utilisation}%</span>
+    <>
+      <RightDrawer title="Contract Details" sub={c.id} onClose={onClose}>
+        <div className="space-y-1.5 mb-4" style={{ fontSize: 13 }}>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Contract ID</span><span style={{ fontWeight: 700 }}>{c.id}</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Customer</span><span style={{ fontWeight: 600 }}>{c.customer}</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{c.product}</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Agreed Rate</span><span>{fmtINR(c.rate)} / unit</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Total Quantity</span><span>{c.total} units</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Consumed</span><span>{c.consumed} units</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Remaining</span><span style={{ fontWeight: 700 }}>{c.remaining} units</span></div>
         </div>
-        <div className="h-2 rounded-full" style={{ background: "#E5E7EB" }}>
-          <div className="h-full rounded-full" style={{ width: `${utilisation}%`, background: utilisation > 80 ? "#EF9F27" : "#00A651" }} />
+        <div className="mb-4">
+          <div className="flex justify-between mb-1.5" style={{ fontSize: 11, color: "#4B5563", fontWeight: 600 }}>
+            <span>UTILISATION</span><span>{utilisation}%</span>
+          </div>
+          <div className="h-2 rounded-full" style={{ background: "#E5E7EB" }}>
+            <div className="h-full rounded-full" style={{ width: `${utilisation}%`, background: utilisation > 80 ? "#EF9F27" : "#00A651" }} />
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-3 gap-2 mb-4" style={{ fontSize: 12 }}>
-        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-          <div className="stat-label">Start</div><div style={{ fontWeight: 600 }}>{c.start}</div>
+        <div className="grid grid-cols-3 gap-2 mb-4" style={{ fontSize: 12 }}>
+          <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+            <div className="stat-label">Start</div><div style={{ fontWeight: 600 }}>{c.start}</div>
+          </div>
+          <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+            <div className="stat-label">End</div><div style={{ fontWeight: 600 }}>{c.end}</div>
+          </div>
+          <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+            <div className="stat-label">Days to Expiry</div><div style={{ fontWeight: 700, color: dayColor }}>{days}d</div>
+          </div>
         </div>
-        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-          <div className="stat-label">End</div><div style={{ fontWeight: 600 }}>{c.end}</div>
+        {days < 60 && (
+          <div className="rounded p-3 mb-4" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, color: "#2B31B8" }}>
+            Cogniq: Contract expires in {days} days at current consumption pace. Consider initiating renewal.
+          </div>
+        )}
+        <div className="flex gap-2 mb-4 flex-wrap items-center">
+          <Btn variant="ghost" size="sm" onClick={() => setAmendOpen(true)}>Request Amendment</Btn>
+          {flagged ? (
+            <>
+              <span className="badge-amber" style={{ padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: "#FFF7ED", color: "#9A3412", border: "1px solid #FED7AA" }}>Renewal Needed</span>
+              <button onClick={() => setFlagged(false)} style={{ fontSize: 12, color: "#4B5563", textDecoration: "underline" }}>Remove Flag</button>
+            </>
+          ) : (
+            <Btn variant="ghost" size="sm" onClick={() => {
+              setFlagged(true);
+              addNotification("Contract " + c.id + " flagged for renewal");
+              toast.success("Contract flagged for renewal");
+            }}>Flag for Renewal</Btn>
+          )}
         </div>
-        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-          <div className="stat-label">Days to Expiry</div><div style={{ fontWeight: 700, color: dayColor }}>{days}d</div>
+        <div className="stat-label mb-2">Release Orders Under This Contract</div>
+        <div className="overflow-x-auto rounded" style={{ border: "1px solid #E5E7EB" }}>
+          <table className="w-full" style={{ fontSize: 12 }}>
+            <thead style={{ background: "#F9FAFB" }}>
+              <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+                <th className="py-2 px-3">Order ID</th><th className="py-2 px-3">Date</th>
+                <th className="py-2 px-3">Qty</th><th className="py-2 px-3">Site</th>
+                <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th>
+                <th className="py-2 px-3">Track</th><th className="py-2 px-3">Invoice</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ros.map((r) => (
+                <tr key={r.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                  <td className="py-2 px-3" style={{ fontWeight: 600 }}>{r.id}</td>
+                  <td className="py-2 px-3">{r.date}</td>
+                  <td className="py-2 px-3">{r.qty}</td>
+                  <td className="py-2 px-3">{r.site}</td>
+                  <td className="py-2 px-3"><StatusBadge status={r.status} /></td>
+                  <td className="py-2 px-3">{r.eta}</td>
+                  <td className="py-2 px-3">
+                    <button onClick={() => setTrackRo({ id: r.id, status: r.status ?? "Dispatched", eta: r.eta })} aria-label="Track"><Package size={14} color="#534AB7" /></button>
+                  </td>
+                  <td className="py-2 px-3">
+                    <button onClick={() => setInvoiceRo({ id: r.id, total: r.qty * c.rate })} aria-label="Invoice"><Receipt size={14} color="#534AB7" /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
-      {days < 60 && (
-        <div className="rounded p-3 mb-4" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, color: "#2B31B8" }}>
-          Cogniq: Contract expires in {days} days at current consumption pace. Consider initiating renewal.
+        <div className="mt-5">
+          <Btn variant="ghost" size="sm" onClick={onClose}>Close</Btn>
+        </div>
+      </RightDrawer>
+      {amendOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3">
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative bg-white w-full max-w-md rounded-xl overflow-hidden" style={{ border: "1px solid #E5E7EB", maxHeight: "92vh", display: "flex", flexDirection: "column" }}>
+            <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Request Contract Amendment</h3>
+              <button onClick={() => setAmendOpen(false)}><X size={18} /></button>
+            </div>
+            <form
+              className="p-5 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const id = "AMND-" + Math.floor(1000 + Math.random() * 9000);
+                addNotification("Amendment Request " + id + " submitted for " + c.id);
+                toast.success("Amendment Request " + id + " submitted. Your account manager will review within 3 business days.");
+                setAmendOpen(false);
+                setAmendChange(""); setAmendJustify("");
+              }}
+            >
+              <div><label className="stat-label block mb-1">What to Amend</label>
+                <select value={amendField} onChange={(e) => setAmendField(e.target.value)} style={inp}>
+                  <option>Rate Revision</option><option>Quantity Revision</option><option>Extension of Validity</option><option>Change of Product Spec</option>
+                </select>
+              </div>
+              <div><label className="stat-label block mb-1">Proposed Change</label>
+                <textarea required rows={3} value={amendChange} onChange={(e) => setAmendChange(e.target.value)} style={inp} />
+              </div>
+              <div><label className="stat-label block mb-1">Supporting Justification</label>
+                <textarea required rows={3} value={amendJustify} onChange={(e) => setAmendJustify(e.target.value)} style={inp} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Btn type="button" variant="ghost" size="sm" onClick={() => setAmendOpen(false)}>Cancel</Btn>
+                <Btn type="submit">Submit</Btn>
+              </div>
+            </form>
+          </div>
         </div>
       )}
-      <div className="stat-label mb-2">Release Orders Under This Contract</div>
-      <div className="overflow-x-auto rounded" style={{ border: "1px solid #E5E7EB" }}>
-        <table className="w-full" style={{ fontSize: 12 }}>
-          <thead style={{ background: "#F9FAFB" }}>
-            <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
-              <th className="py-2 px-3">Order ID</th><th className="py-2 px-3">Date</th>
-              <th className="py-2 px-3">Qty</th><th className="py-2 px-3">Site</th>
-              <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ros.map((r) => (
-              <tr key={r.id} style={{ borderTop: "1px solid #E5E7EB" }}>
-                <td className="py-2 px-3" style={{ fontWeight: 600 }}>{r.id}</td>
-                <td className="py-2 px-3">{r.date}</td>
-                <td className="py-2 px-3">{r.qty}</td>
-                <td className="py-2 px-3">{r.site}</td>
-                <td className="py-2 px-3"><StatusBadge status={r.status} /></td>
-                <td className="py-2 px-3">{r.eta}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="mt-5">
-        <Btn variant="ghost" size="sm" onClick={onClose}>Close</Btn>
-      </div>
-    </RightDrawer>
+      {trackRo && <TrackOrderModal orderId={trackRo.id} status={trackRo.status} eta={trackRo.eta} onClose={() => setTrackRo(null)} />}
+      {invoiceRo && <InvoicePanel orderId={invoiceRo.id} total={invoiceRo.total} onClose={() => setInvoiceRo(null)} />}
+    </>
   );
 }
 
