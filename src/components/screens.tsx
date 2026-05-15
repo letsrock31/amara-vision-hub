@@ -132,6 +132,9 @@ function SuccessBanner({ text, onClose }: { text: string; onClose?: () => void }
 /* =================== DEALER: HOME =================== */
 export function DealerHome() {
   const { setView, addToCart, setPendingOrdersFilter, setShowLowStockBanner } = useApp();
+  const [schemeOpen, setSchemeOpen] = useState(false);
+  const [msgOpen, setMsgOpen] = useState(false);
+  const [msgBody, setMsgBody] = useState("");
   const reorderNow = () => {
     addToCart({ id: "P1", name: "Amaron Pro 35Ah 4W", price: 4200, qty: 40 });
     setView("catalog");
@@ -184,6 +187,92 @@ export function DealerHome() {
           </div>
         </div>
       </div>
+
+      <div className="card-base mt-4" style={{ borderTop: "3px solid #534AB7" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#534AB7", letterSpacing: 0.5 }}>ACTIVE SCHEME</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>Q2 Dealer Excellence Scheme</div>
+        <div className="flex flex-wrap gap-4 mt-2" style={{ fontSize: 13, color: "#4B5563" }}>
+          <span>Target: <b style={{ color: "#0A0A0F" }}>80 units</b></span>
+          <span>Achieved: <b style={{ color: "#0A0A0F" }}>54 units</b></span>
+          <span>Reward: <b style={{ color: "#0A0A0F" }}>+2.5% margin</b></span>
+        </div>
+        <div className="h-2 rounded-full mt-3" style={{ background: "#E5E7EB" }}>
+          <div className="h-full rounded-full" style={{ width: "67%", background: "#534AB7" }} />
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <span style={{ fontSize: 12, color: "#6B7280" }}>Scheme ends 31 May 2026</span>
+          <Btn variant="ghost" size="sm" onClick={() => setSchemeOpen(true)}>View Scheme Details</Btn>
+        </div>
+      </div>
+
+      <div className="card-base mt-4" style={{ borderLeft: "3px solid #00A651" }}>
+        <div className="stat-label">Your Dealer Sales Representative</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>Rajiv Menon</div>
+        <div className="flex items-center gap-2 mt-2" style={{ fontSize: 13, color: "#4B5563" }}>
+          <Phone size={14} /> +91 98100 44321
+        </div>
+        <div className="flex items-center gap-2 mt-1" style={{ fontSize: 13, color: "#4B5563" }}>
+          <Mail size={14} /> rajiv.menon@amararaja.com
+        </div>
+        <div className="flex gap-2 mt-3">
+          <Btn variant="ghost" size="sm" onClick={() => toast.success("Calling Rajiv Menon...")}>Call Now</Btn>
+          <Btn variant="ghost" size="sm" onClick={() => setMsgOpen(true)}>Send Message</Btn>
+        </div>
+      </div>
+
+      {schemeOpen && (
+        <CenterModal widthClass="max-w-lg">
+          <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Q2 Dealer Excellence Scheme</h3>
+            <button onClick={() => setSchemeOpen(false)} aria-label="Close"><X size={18} /></button>
+          </div>
+          <div className="p-5 overflow-y-auto" style={{ flex: 1 }}>
+            <p style={{ fontSize: 13, color: "#4B5563" }}>Earn additional margin credits based on monthly unit sales across all Amara Raja SKUs.</p>
+            <div className="rounded-lg overflow-hidden mt-4" style={{ border: "1px solid #E5E7EB" }}>
+              <table className="w-full" style={{ fontSize: 13 }}>
+                <thead style={{ background: "#F9FAFB" }}>
+                  <tr style={{ color: "#4B5563", fontSize: 11, textTransform: "uppercase", textAlign: "left" }}>
+                    <th className="py-2 px-3">Tier</th><th className="py-2 px-3">Target</th><th className="py-2 px-3">Reward</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderTop: "1px solid #E5E7EB" }}><td className="py-2 px-3">Tier 1</td><td className="py-2 px-3">50 units</td><td className="py-2 px-3">+1.5% margin</td></tr>
+                  <tr style={{ borderTop: "1px solid #E5E7EB", background: "#EEF0FF" }}><td className="py-2 px-3" style={{ fontWeight: 700 }}>Tier 2 (current)</td><td className="py-2 px-3">80 units</td><td className="py-2 px-3">+2.5% margin</td></tr>
+                  <tr style={{ borderTop: "1px solid #E5E7EB" }}><td className="py-2 px-3">Tier 3</td><td className="py-2 px-3">120 units</td><td className="py-2 px-3">+4% margin</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4" style={{ fontSize: 13 }}>Your Standing: <b>Rank 3 of 12 NCR dealers</b></div>
+            <div style={{ fontSize: 12, color: "#6B7280", marginTop: 4 }}>Scheme valid: 01 Apr 2026 to 31 May 2026</div>
+          </div>
+          <div className="px-5 py-3 flex justify-end" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+            <Btn size="sm" onClick={() => setSchemeOpen(false)}>Close</Btn>
+          </div>
+        </CenterModal>
+      )}
+
+      {msgOpen && (
+        <CenterModal widthClass="max-w-md">
+          <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700 }}>Message Your DSR</h3>
+            <button onClick={() => setMsgOpen(false)} aria-label="Close"><X size={18} /></button>
+          </div>
+          <div className="p-5 space-y-3">
+            <div>
+              <label className="stat-label block mb-1">Subject</label>
+              <input readOnly value="Query from Sharma Auto Parts" className="w-full px-3 py-2 rounded-md" style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#F3F4F6" }} />
+            </div>
+            <div>
+              <label className="stat-label block mb-1">Your message</label>
+              <textarea value={msgBody} onChange={(e) => setMsgBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-md" style={{ border: "1px solid #D1D5DB", fontSize: 13 }} />
+            </div>
+          </div>
+          <div className="px-5 py-3 flex justify-end gap-2" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
+            <Btn variant="ghost" size="sm" onClick={() => setMsgOpen(false)}>Cancel</Btn>
+            <Btn size="sm" onClick={() => { setMsgOpen(false); setMsgBody(""); toast.success("Message sent to Rajiv Menon"); }}>Send</Btn>
+          </div>
+        </CenterModal>
+      )}
     </div>
   );
 }
