@@ -421,10 +421,12 @@ export function ProductCatalog() {
 function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
   cart: CartItem[]; total: number;
   onCancel: () => void;
-  onConfirm: (deliveryDate: string) => void;
+  onConfirm: (deliveryDate: string, urgent: boolean, finalTotal: number) => void;
 }) {
   const defaultDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
   const [date, setDate] = useState(defaultDate);
+  const [urgent, setUrgent] = useState(false);
+  const grand = total + (urgent ? 250 : 0);
   return (
     <CenterModal widthClass="max-w-2xl">
       <div className="px-5 py-4" style={{ borderBottom: "1px solid #E5E7EB", background: "#EEF0FF" }}>
@@ -441,7 +443,7 @@ function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
             style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#F3F4F6" }}
           />
         </div>
-        <div className="mb-4">
+        <div className="mb-3">
           <label className="stat-label block mb-1">Preferred Delivery Date</label>
           <input
             type="date"
@@ -451,6 +453,13 @@ function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
             className="w-full px-3 py-2 rounded-md"
             style={{ border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF" }}
           />
+        </div>
+        <label className="flex items-center gap-2 mb-1" style={{ fontSize: 13 }}>
+          <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+          Request Urgent Delivery (+₹250)
+        </label>
+        <div className="mb-4" style={{ fontSize: 12, color: urgent ? "#15803D" : "#6B7280", fontWeight: 600 }}>
+          {urgent ? "Estimated: Next day delivery" : "Estimated: 3 business days"}
         </div>
         <div className="rounded-lg overflow-hidden" style={{ border: "1px solid #E5E7EB" }}>
           <table className="w-full" style={{ fontSize: 13 }}>
@@ -469,9 +478,15 @@ function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
                   <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 600 }}>{fmtINR(c.price * c.qty)}</td>
                 </tr>
               ))}
+              {urgent && (
+                <tr style={{ borderTop: "1px solid #E5E7EB" }}>
+                  <td className="py-2 px-3" colSpan={2}>Urgency surcharge</td>
+                  <td className="py-2 px-3" style={{ textAlign: "right", fontWeight: 600 }}>{fmtINR(250)}</td>
+                </tr>
+              )}
               <tr style={{ background: "#F9FAFB", borderTop: "1px solid #E5E7EB" }}>
                 <td className="py-3 px-3" style={{ fontWeight: 700 }} colSpan={2}>Order Total</td>
-                <td className="py-3 px-3" style={{ textAlign: "right", fontWeight: 700, fontSize: 14 }}>{fmtINR(total)}</td>
+                <td className="py-3 px-3" style={{ textAlign: "right", fontWeight: 700, fontSize: 14 }}>{fmtINR(grand)}</td>
               </tr>
             </tbody>
           </table>
@@ -479,7 +494,7 @@ function OrderConfirmationModal({ cart, total, onCancel, onConfirm }: {
       </div>
       <div className="px-5 py-3 flex justify-end gap-2" style={{ borderTop: "1px solid #E5E7EB", background: "#F9FAFB" }}>
         <Btn variant="ghost" size="sm" onClick={onCancel}>Cancel</Btn>
-        <Btn size="sm" onClick={() => onConfirm(date)}>Confirm Order</Btn>
+        <Btn size="sm" onClick={() => onConfirm(date, urgent, grand)}>Confirm Order</Btn>
       </div>
     </CenterModal>
   );
