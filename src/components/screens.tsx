@@ -484,6 +484,7 @@ export function DealerOrdersAdmin() {
   const [category, setCategory] = useState("All");
   const [status, setStatus] = useState("All");
   const [page, setPage] = useState(1);
+  const { openAction } = useApp();
 
   const filtered = REGIONAL_ORDERS.filter((o) =>
     (category === "All" || o.category === category) &&
