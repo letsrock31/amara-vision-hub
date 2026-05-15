@@ -2666,70 +2666,143 @@ function ContractDetailDrawer({ contractId, onClose }: { contractId: string; onC
   const utilisation = Math.round((c.consumed / c.total) * 100);
   const ros = sampleReleaseOrdersFor(c.id);
   const dayColor = days < 30 ? "#C00000" : days < 60 ? "#EF9F27" : "#15803D";
+  const { addNotification } = useApp();
+  const [amendOpen, setAmendOpen] = useState(false);
+  const [flagged, setFlagged] = useState(false);
+  const [amendField, setAmendField] = useState("Rate Revision");
+  const [amendChange, setAmendChange] = useState("");
+  const [amendJustify, setAmendJustify] = useState("");
+  const [trackRo, setTrackRo] = useState<{ id: string; status: string; eta: string } | null>(null);
+  const [invoiceRo, setInvoiceRo] = useState<{ id: string; total: number } | null>(null);
+  const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
 
   return (
-    <RightDrawer title="Contract Details" sub={c.id} onClose={onClose}>
-      <div className="space-y-1.5 mb-4" style={{ fontSize: 13 }}>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Contract ID</span><span style={{ fontWeight: 700 }}>{c.id}</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Customer</span><span style={{ fontWeight: 600 }}>{c.customer}</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{c.product}</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Agreed Rate</span><span>{fmtINR(c.rate)} / unit</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Total Quantity</span><span>{c.total} units</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Consumed</span><span>{c.consumed} units</span></div>
-        <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Remaining</span><span style={{ fontWeight: 700 }}>{c.remaining} units</span></div>
-      </div>
-      <div className="mb-4">
-        <div className="flex justify-between mb-1.5" style={{ fontSize: 11, color: "#4B5563", fontWeight: 600 }}>
-          <span>UTILISATION</span><span>{utilisation}%</span>
+    <>
+      <RightDrawer title="Contract Details" sub={c.id} onClose={onClose}>
+        <div className="space-y-1.5 mb-4" style={{ fontSize: 13 }}>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Contract ID</span><span style={{ fontWeight: 700 }}>{c.id}</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Customer</span><span style={{ fontWeight: 600 }}>{c.customer}</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Product</span><span style={{ fontWeight: 600 }}>{c.product}</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Agreed Rate</span><span>{fmtINR(c.rate)} / unit</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Total Quantity</span><span>{c.total} units</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Consumed</span><span>{c.consumed} units</span></div>
+          <div className="flex justify-between"><span style={{ color: "#4B5563" }}>Remaining</span><span style={{ fontWeight: 700 }}>{c.remaining} units</span></div>
         </div>
-        <div className="h-2 rounded-full" style={{ background: "#E5E7EB" }}>
-          <div className="h-full rounded-full" style={{ width: `${utilisation}%`, background: utilisation > 80 ? "#EF9F27" : "#00A651" }} />
+        <div className="mb-4">
+          <div className="flex justify-between mb-1.5" style={{ fontSize: 11, color: "#4B5563", fontWeight: 600 }}>
+            <span>UTILISATION</span><span>{utilisation}%</span>
+          </div>
+          <div className="h-2 rounded-full" style={{ background: "#E5E7EB" }}>
+            <div className="h-full rounded-full" style={{ width: `${utilisation}%`, background: utilisation > 80 ? "#EF9F27" : "#00A651" }} />
+          </div>
         </div>
-      </div>
-      <div className="grid grid-cols-3 gap-2 mb-4" style={{ fontSize: 12 }}>
-        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-          <div className="stat-label">Start</div><div style={{ fontWeight: 600 }}>{c.start}</div>
+        <div className="grid grid-cols-3 gap-2 mb-4" style={{ fontSize: 12 }}>
+          <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+            <div className="stat-label">Start</div><div style={{ fontWeight: 600 }}>{c.start}</div>
+          </div>
+          <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+            <div className="stat-label">End</div><div style={{ fontWeight: 600 }}>{c.end}</div>
+          </div>
+          <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+            <div className="stat-label">Days to Expiry</div><div style={{ fontWeight: 700, color: dayColor }}>{days}d</div>
+          </div>
         </div>
-        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-          <div className="stat-label">End</div><div style={{ fontWeight: 600 }}>{c.end}</div>
+        {days < 60 && (
+          <div className="rounded p-3 mb-4" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, color: "#2B31B8" }}>
+            Cogniq: Contract expires in {days} days at current consumption pace. Consider initiating renewal.
+          </div>
+        )}
+        <div className="flex gap-2 mb-4 flex-wrap items-center">
+          <Btn variant="ghost" size="sm" onClick={() => setAmendOpen(true)}>Request Amendment</Btn>
+          {flagged ? (
+            <>
+              <span className="badge-amber" style={{ padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, background: "#FFF7ED", color: "#9A3412", border: "1px solid #FED7AA" }}>Renewal Needed</span>
+              <button onClick={() => setFlagged(false)} style={{ fontSize: 12, color: "#4B5563", textDecoration: "underline" }}>Remove Flag</button>
+            </>
+          ) : (
+            <Btn variant="ghost" size="sm" onClick={() => {
+              setFlagged(true);
+              addNotification("Contract " + c.id + " flagged for renewal");
+              toast.success("Contract flagged for renewal");
+            }}>Flag for Renewal</Btn>
+          )}
         </div>
-        <div className="p-2 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
-          <div className="stat-label">Days to Expiry</div><div style={{ fontWeight: 700, color: dayColor }}>{days}d</div>
+        <div className="stat-label mb-2">Release Orders Under This Contract</div>
+        <div className="overflow-x-auto rounded" style={{ border: "1px solid #E5E7EB" }}>
+          <table className="w-full" style={{ fontSize: 12 }}>
+            <thead style={{ background: "#F9FAFB" }}>
+              <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+                <th className="py-2 px-3">Order ID</th><th className="py-2 px-3">Date</th>
+                <th className="py-2 px-3">Qty</th><th className="py-2 px-3">Site</th>
+                <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th>
+                <th className="py-2 px-3">Track</th><th className="py-2 px-3">Invoice</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ros.map((r) => (
+                <tr key={r.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                  <td className="py-2 px-3" style={{ fontWeight: 600 }}>{r.id}</td>
+                  <td className="py-2 px-3">{r.date}</td>
+                  <td className="py-2 px-3">{r.qty}</td>
+                  <td className="py-2 px-3">{r.site}</td>
+                  <td className="py-2 px-3"><StatusBadge status={r.status} /></td>
+                  <td className="py-2 px-3">{r.eta}</td>
+                  <td className="py-2 px-3">
+                    <button onClick={() => setTrackRo({ id: r.id, status: r.status ?? "Dispatched", eta: r.eta })} aria-label="Track"><Package size={14} color="#534AB7" /></button>
+                  </td>
+                  <td className="py-2 px-3">
+                    <button onClick={() => setInvoiceRo({ id: r.id, total: r.qty * c.rate })} aria-label="Invoice"><Receipt size={14} color="#534AB7" /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
-      {days < 60 && (
-        <div className="rounded p-3 mb-4" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7", fontSize: 12, color: "#2B31B8" }}>
-          Cogniq: Contract expires in {days} days at current consumption pace. Consider initiating renewal.
+        <div className="mt-5">
+          <Btn variant="ghost" size="sm" onClick={onClose}>Close</Btn>
+        </div>
+      </RightDrawer>
+      {amendOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3">
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative bg-white w-full max-w-md rounded-xl overflow-hidden" style={{ border: "1px solid #E5E7EB", maxHeight: "92vh", display: "flex", flexDirection: "column" }}>
+            <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700 }}>Request Contract Amendment</h3>
+              <button onClick={() => setAmendOpen(false)}><X size={18} /></button>
+            </div>
+            <form
+              className="p-5 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const id = "AMND-" + Math.floor(1000 + Math.random() * 9000);
+                addNotification("Amendment Request " + id + " submitted for " + c.id);
+                toast.success("Amendment Request " + id + " submitted. Your account manager will review within 3 business days.");
+                setAmendOpen(false);
+                setAmendChange(""); setAmendJustify("");
+              }}
+            >
+              <div><label className="stat-label block mb-1">What to Amend</label>
+                <select value={amendField} onChange={(e) => setAmendField(e.target.value)} style={inp}>
+                  <option>Rate Revision</option><option>Quantity Revision</option><option>Extension of Validity</option><option>Change of Product Spec</option>
+                </select>
+              </div>
+              <div><label className="stat-label block mb-1">Proposed Change</label>
+                <textarea required rows={3} value={amendChange} onChange={(e) => setAmendChange(e.target.value)} style={inp} />
+              </div>
+              <div><label className="stat-label block mb-1">Supporting Justification</label>
+                <textarea required rows={3} value={amendJustify} onChange={(e) => setAmendJustify(e.target.value)} style={inp} />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Btn type="button" variant="ghost" size="sm" onClick={() => setAmendOpen(false)}>Cancel</Btn>
+                <Btn type="submit">Submit</Btn>
+              </div>
+            </form>
+          </div>
         </div>
       )}
-      <div className="stat-label mb-2">Release Orders Under This Contract</div>
-      <div className="overflow-x-auto rounded" style={{ border: "1px solid #E5E7EB" }}>
-        <table className="w-full" style={{ fontSize: 12 }}>
-          <thead style={{ background: "#F9FAFB" }}>
-            <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
-              <th className="py-2 px-3">Order ID</th><th className="py-2 px-3">Date</th>
-              <th className="py-2 px-3">Qty</th><th className="py-2 px-3">Site</th>
-              <th className="py-2 px-3">Status</th><th className="py-2 px-3">ETA</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ros.map((r) => (
-              <tr key={r.id} style={{ borderTop: "1px solid #E5E7EB" }}>
-                <td className="py-2 px-3" style={{ fontWeight: 600 }}>{r.id}</td>
-                <td className="py-2 px-3">{r.date}</td>
-                <td className="py-2 px-3">{r.qty}</td>
-                <td className="py-2 px-3">{r.site}</td>
-                <td className="py-2 px-3"><StatusBadge status={r.status} /></td>
-                <td className="py-2 px-3">{r.eta}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="mt-5">
-        <Btn variant="ghost" size="sm" onClick={onClose}>Close</Btn>
-      </div>
-    </RightDrawer>
+      {trackRo && <TrackOrderModal orderId={trackRo.id} status={trackRo.status} eta={trackRo.eta} onClose={() => setTrackRo(null)} />}
+      {invoiceRo && <InvoicePanel orderId={invoiceRo.id} total={invoiceRo.total} onClose={() => setInvoiceRo(null)} />}
+    </>
   );
 }
 
