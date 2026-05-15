@@ -193,6 +193,7 @@ export function ProductCatalog() {
   const [filter, setFilter] = useState<"All" | "2W" | "4W" | "Industrial">("All");
   const [search, setSearch] = useState("");
   const [qtyMap, setQtyMap] = useState<Record<string, number>>({});
+  const [detailProduct, setDetailProduct] = useState<typeof PRODUCTS[number] | null>(null);
   const { cart, addToCart, setView } = useApp();
 
   const filtered = PRODUCTS.filter((p) =>
@@ -204,11 +205,11 @@ export function ProductCatalog() {
   const getQty = (id: string) => qtyMap[id] ?? 1;
   const totalCartItems = cart.reduce((s, c) => s + c.qty, 0);
 
-  const handleAdd = (id: string) => {
+  const handleAdd = (id: string, q?: number) => {
     const p = PRODUCTS.find((x) => x.id === id)!;
-    const q = getQty(id);
-    addToCart({ id, name: p.name, price: p.price, qty: q });
-    toast.success(`${p.name} ×${q} added to cart`);
+    const quantity = q ?? getQty(id);
+    addToCart({ id, name: p.name, price: p.price, qty: quantity });
+    toast.success(`${p.name} ×${quantity} added to cart`);
     setQtyMap({ ...qtyMap, [id]: 1 });
   };
 
