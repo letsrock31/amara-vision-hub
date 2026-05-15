@@ -840,7 +840,11 @@ function OrderDetailDrawer({ order, onClose }: { order: RegOrder; onClose: () =>
       </div>
       <div className="stat-label mb-2">Status Timeline</div>
       <StageTimeline status={order.status} />
-      <div className="mt-5">
+      <ContactDealerCard dealer={order.dealer} location={order.location} />
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Btn variant="purple" size="sm" onClick={onEscalate}><AlertTriangle size={12} style={{ display: "inline", marginRight: 4 }} /> Escalate</Btn>
+        <Btn variant="ghost" size="sm" onClick={() => toast.success(`Calling ${order.dealer}…`)}><Phone size={12} style={{ display: "inline", marginRight: 4 }} /> Call</Btn>
+        <Btn variant="ghost" size="sm" onClick={() => toast.success(`Email drafted to ${order.dealer}`)}><Mail size={12} style={{ display: "inline", marginRight: 4 }} /> Email</Btn>
         <Btn variant="ghost" size="sm" onClick={onClose}>Close</Btn>
       </div>
     </RightDrawer>
