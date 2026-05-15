@@ -34,27 +34,27 @@ export function Login() {
             value={selected}
             onChange={(e) => setSelected(e.target.value as Profile)}
             className="w-full px-3 py-2 rounded-md outline-none"
-            style={{ border: "1px solid #26262F", background: "#16161D", fontSize: 14, color: "#FFFFFF" }}
+            style={{ border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.25)", fontSize: 14, color: "#FFFFFF" }}
           >
             <option value="">Choose a profile...</option>
             {PROFILES.map((p) => (
-              <option key={p} value={p}>{p}</option>
+              <option key={p} value={p} style={{ background: "#16161D" }}>{p}</option>
             ))}
           </select>
 
           <button
             disabled={!selected}
             onClick={() => selected && setProfile(selected as Profile)}
-            className="w-full mt-6 py-2.5 rounded-md text-white transition-opacity"
-            style={{ background: "#c00000", fontSize: 14, opacity: selected ? 1 : 0.5 }}
+            className="w-full mt-6 py-2.5 rounded-md transition-opacity"
+            style={{ background: "#C6F24E", color: "#0A0A0F", fontSize: 14, fontWeight: 600, opacity: selected ? 1 : 0.5 }}
           >
             Login
           </button>
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-2">
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5B5BF5" }} />
-          <span style={{ fontSize: 11, color: "#9ca3af" }}>Powered by Cogniq AI</span>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#FFFFFF" }} />
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>Powered by Cogniq AI</span>
         </div>
       </div>
     </div>
