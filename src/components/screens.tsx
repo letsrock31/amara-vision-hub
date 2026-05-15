@@ -1236,7 +1236,10 @@ export function SecondarySales() {
           <div className="stat-label mb-3">SKU sell-through (this month)</div>
           <div className="space-y-3">
             {SKU_SELLTHROUGH.map((s) => (
-              <div key={s.sku}>
+              <div key={s.sku}
+                onClick={() => setSkuDetail(s.sku)}
+                className="hover:bg-[#F9FAFB] rounded p-1 -m-1"
+                style={{ cursor: "pointer" }}>
                 <div className="flex justify-between" style={{ fontSize: 13 }}>
                   <span style={{ fontWeight: 500 }}>{s.sku}</span><span style={{ color: "#4B5563" }}>{s.units.toLocaleString("en-IN")}</span>
                 </div>
