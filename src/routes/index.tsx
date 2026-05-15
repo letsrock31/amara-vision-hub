@@ -59,7 +59,7 @@ function App() {
   })();
 
   return (
-    <div style={{ background: "#0D0D0D", minHeight: "100vh" }}>
+    <div style={{ background: "#0A0A0F", minHeight: "100vh" }}>
       <Header onMenuClick={() => setMobileNav(true)} />
       <Sidebar mobileOpen={mobileNav} onClose={() => setMobileNav(false)} />
       <main className="md:ml-[180px] pt-[52px] pb-24 md:pb-10">
@@ -103,7 +103,7 @@ function MobileBottomNav() {
   return (
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex justify-around"
-      style={{ background: "#111111", borderTop: "0.5px solid #222222", height: 56 }}
+      style={{ background: "#0F0F15", borderTop: "0.5px solid #1E1E27", height: 56 }}
     >
       {items.map((it) => {
         const Icon = it.icon;

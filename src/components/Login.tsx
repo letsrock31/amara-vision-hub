@@ -7,12 +7,12 @@ export function Login() {
   const [selected, setSelected] = useState<Profile | "">("");
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#0D0D0D" }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#0A0A0F" }}>
       <div className="w-full max-w-md card-base" style={{ padding: 32 }}>
         <div className="flex items-center justify-center gap-3 mb-8">
           <span style={{ color: "#c00000", fontSize: 16, letterSpacing: "0.15em" }}>COGNILIX</span>
-          <span style={{ width: 1, height: 20, background: "#2E2E2E" }} />
-          <span style={{ color: "#22a850", fontSize: 14 }}>Amara Raja</span>
+          <span style={{ width: 1, height: 20, background: "#26262F" }} />
+          <span style={{ color: "#B8E94A", fontSize: 14 }}>Amara Raja</span>
         </div>
         <h1 style={{ fontSize: 20 }} className="text-center">Welcome back</h1>
         <p className="text-center mt-1" style={{ fontSize: 13, color: "#9ca3af" }}>
@@ -25,7 +25,7 @@ export function Login() {
             value={selected}
             onChange={(e) => setSelected(e.target.value as Profile)}
             className="w-full px-3 py-2 rounded-md outline-none"
-            style={{ border: "1px solid #2E2E2E", background: "#1A1A1A", fontSize: 14, color: "#FFFFFF" }}
+            style={{ border: "1px solid #26262F", background: "#16161D", fontSize: 14, color: "#FFFFFF" }}
           >
             <option value="">Choose a profile...</option>
             {PROFILES.map((p) => (
@@ -44,7 +44,7 @@ export function Login() {
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-2">
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#534ab7" }} />
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5B5BF5" }} />
           <span style={{ fontSize: 11, color: "#9ca3af" }}>Powered by Cogniq AI</span>
         </div>
       </div>

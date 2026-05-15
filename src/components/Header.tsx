@@ -22,7 +22,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
     <header
       className="fixed top-0 left-0 right-0 z-40 flex items-center px-5 gap-3"
-      style={{ height: 52, background: "#111111", borderBottom: "0.5px solid #222222" }}
+      style={{ height: 52, background: "#0F0F15", borderBottom: "0.5px solid #1E1E27" }}
     >
       <button
         className="md:hidden text-white mr-1"
@@ -33,20 +33,20 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       </button>
       <span style={{ color: "#C00000", fontSize: 13, letterSpacing: "0.15em", textTransform: "uppercase" }}>COGNILIX</span>
       <span style={{ width: 1, height: 18, background: "#333333" }} />
-      <span style={{ color: "#22A850", fontSize: 13 }}>Amara Raja</span>
+      <span style={{ color: "#B8E94A", fontSize: 13 }}>Amara Raja</span>
       <div className="flex-1" />
       <div
         className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-        style={{ background: "#14142A", border: "1px solid #3A3470" }}
+        style={{ background: "#161734", border: "1px solid #3D3FA8" }}
       >
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#534AB7" }} />
-        <span style={{ fontSize: 11, color: "#AFA9EC" }}>Cogniq active</span>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#5B5BF5" }} />
+        <span style={{ fontSize: 11, color: "#C7C9FF" }}>Cogniq active</span>
       </div>
       <div className="relative" ref={ref}>
         <button
           onClick={() => setOpen(!open)}
           className="flex items-center gap-2 px-2 py-1 rounded-md"
-          style={{ background: "#1A1A1A", border: "0.5px solid #2E2E2E" }}
+          style={{ background: "#16161D", border: "0.5px solid #26262F" }}
         >
           <span
             className="w-6 h-6 rounded-full flex items-center justify-center text-white"
@@ -62,7 +62,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         {open && (
           <div
             className="absolute right-0 mt-1 w-56 rounded-md shadow-lg py-1 z-50"
-            style={{ background: "#1A1A1A", border: "0.5px solid #2E2E2E" }}
+            style={{ background: "#16161D", border: "0.5px solid #26262F" }}
           >
             <div className="px-3 py-1.5" style={{ fontSize: 9, textTransform: "uppercase", color: "#444444" }}>
               Switch Profile
@@ -76,7 +76,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                 }}
                 className="w-full text-left px-3 py-2 flex items-center gap-2"
                 style={{ fontSize: 12, color: p === profile ? "#C00000" : "#FFFFFF", background: "transparent" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#222222")}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#1E1E27")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <span
@@ -88,7 +88,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                 {p}
               </button>
             ))}
-            <div style={{ borderTop: "0.5px solid #2E2E2E" }} className="mt-1 pt-1">
+            <div style={{ borderTop: "0.5px solid #26262F" }} className="mt-1 pt-1">
               <button
                 onClick={() => {
                   setProfile(null);
@@ -96,7 +96,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                 }}
                 className="w-full text-left px-3 py-2 flex items-center gap-2"
                 style={{ fontSize: 12, color: "#9CA3AF" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#222222")}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#1E1E27")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <LogOut size={12} /> Sign out
