@@ -8,7 +8,7 @@ import {
 import { useApp, type CartItem, type DealerOrder } from "@/lib/app-context";
 import { StatCard, StatusBadge, PageHeader, AISuggestions, Btn, FilterBar, Pagination } from "./ui-bits";
 import { Search, ShoppingCart, X, Plus, Minus, ArrowRight, Trash2, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Package, AlertTriangle, Phone, Mail, RefreshCw, Receipt, MessageSquare, BarChart2, Pencil, Download } from "lucide-react";
-import { ProductDetailModal, TrackOrderModal, InvoicePanel, ComplaintModal, EscalateModal, ContactDealerCard, StarRating } from "./shared";
+import { ProductDetailModal, TrackOrderModal, InvoicePanel, ComplaintModal, EscalateModal, ContactDealerCard, StarRating, SkuDetailModal, RegionDetailModal } from "./shared";
 
 const PAGE_SIZE = 8;
 const DELIVERY_ADDRESS = "Shop 14, Chandni Chowk Market, Delhi 110006";
