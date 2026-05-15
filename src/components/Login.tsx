@@ -19,9 +19,9 @@ export function Login() {
         }}
       >
         <div className="flex items-center justify-center gap-3 mb-8">
-          <span style={{ color: "#FFFFFF", fontSize: 16, letterSpacing: "0.15em", fontWeight: 600 }}>COGNILIX</span>
-          <span style={{ width: 1, height: 20, background: "rgba(255,255,255,0.3)" }} />
-          <span style={{ color: "#C6F24E", fontSize: 14 }}>Amara Raja</span>
+          <span style={{ color: "#FFFFFF", fontSize: 18, letterSpacing: "0.18em", fontWeight: 800 }}>COGNILIX</span>
+          <span style={{ width: 2, height: 22, background: "#FFFFFF", borderRadius: 1 }} />
+          <span style={{ color: "#00E676", fontSize: 17, fontWeight: 800 }}>Amara Raja</span>
         </div>
         <h1 style={{ fontSize: 22, color: "#FFFFFF" }} className="text-center">Welcome back</h1>
         <p className="text-center mt-1" style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>
