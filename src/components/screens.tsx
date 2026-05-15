@@ -184,8 +184,8 @@ export function ProductCatalog() {
                     <div style={{ fontSize: 11, color: "#9ca3af" }}>{fmtINR(i.p.price)} × {i.q}</div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setCart((c) => ({ ...c, [i.p.id]: Math.max(0, c[i.p.id] - 1) }))} style={{ padding: 2 }}><X size={12} /></button>
-                    <button onClick={() => setCart((c) => ({ ...c, [i.p.id]: c[i.p.id] + 1 }))} style={{ padding: 2 }}><Plus size={12} /></button>
+                    <button onClick={() => updateQty(i.p.id, -1)} style={{ padding: 2 }}><X size={12} /></button>
+                    <button onClick={() => updateQty(i.p.id, 1)} style={{ padding: 2 }}><Plus size={12} /></button>
                   </div>
                 </div>
               ))}
