@@ -2576,12 +2576,14 @@ export function MyContracts() {
 /* =================== INDUSTRIAL CUSTOMER: PLACE RELEASE ORDER =================== */
 export function PlaceReleaseOrder() {
   const mine = CONTRACTS.filter((c) => c.customer === "Indus Towers");
-  const { setView, selectedContractId, setSelectedContractId, addReleaseOrder } = useApp();
-  const initialId = selectedContractId && mine.find((c) => c.id === selectedContractId) ? selectedContractId : mine[0].id;
+  const { setView, selectedContractId, setSelectedContractId, addReleaseOrder, draftReleaseOrder, setDraftReleaseOrder, addNotification } = useApp();
+  const initialId = (draftReleaseOrder?.contractId) || (selectedContractId && mine.find((c) => c.id === selectedContractId) ? selectedContractId : mine[0].id);
   const [contractId, setContractId] = useState(initialId);
-  const [qty, setQty] = useState(10);
-  const [site, setSite] = useState(SITES[0].id);
-  const [date, setDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
+  const [qty, setQty] = useState(draftReleaseOrder?.qty ?? 10);
+  const [site, setSite] = useState(draftReleaseOrder?.site ?? SITES[0].id);
+  const [date, setDate] = useState(draftReleaseOrder?.date ?? new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
+  const [urgent, setUrgent] = useState<boolean>(draftReleaseOrder?.urgent ?? false);
+  const [instructions, setInstructions] = useState<string>(draftReleaseOrder?.instructions ?? "");
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState<{ ro: string; eta: string; remaining: number } | null>(null);
 
@@ -2618,8 +2620,10 @@ export function PlaceReleaseOrder() {
     );
   }
 
-  const total = qty * contract.rate;
-  const etaDate = new Date(new Date(date).getTime() + 3 * 86400000).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const surcharge = urgent ? 5000 : 0;
+  const total = qty * contract.rate + surcharge;
+  const baseEta = new Date(new Date(date).getTime() + 3 * 86400000);
+  const etaDate = (urgent ? new Date(new Date(date).getTime() + 1 * 86400000) : baseEta).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
   return (
     <div>
@@ -2677,9 +2681,27 @@ export function PlaceReleaseOrder() {
           </div>
           <div>
             <label className="stat-label block mb-1">Special Instructions</label>
-            <textarea rows={3} className="w-full" style={inputStyle} />
+            <textarea rows={3} value={instructions} onChange={(e) => setInstructions(e.target.value)} className="w-full" style={inputStyle} />
           </div>
-          <Btn type="submit" disabled={overage}>Submit Release Order</Btn>
+          <label className="flex items-center gap-2" style={{ fontSize: 13, color: "#0A0A0F", fontWeight: 600 }}>
+            <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+            Urgent delivery (+₹5,000 surcharge, next-day dispatch)
+          </label>
+          <div className="flex gap-2">
+            <Btn type="submit" disabled={overage}>Submit Release Order</Btn>
+            <Btn
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setDraftReleaseOrder({ contractId, qty, site, date, urgent, instructions });
+                addNotification(`Draft saved for ${contract.id}`, "info");
+                toast.success("Draft saved");
+                setView("contracts");
+              }}
+            >
+              Save as Draft
+            </Btn>
+          </div>
         </form>
 
         <div className="card-base h-fit" style={{ borderTop: "3px solid #5B5BF5" }}>
@@ -2719,6 +2741,7 @@ export function PlaceReleaseOrder() {
           onConfirm={() => {
             const ro = "RO-" + Math.floor(1000 + Math.random() * 9000);
             addReleaseOrder({ id: ro, contractId: contract.id, qty, site, date, eta: etaDate, total });
+            setDraftReleaseOrder(null);
             setConfirming(false);
             setConfirmed({ ro, eta: etaDate, remaining: contract.remaining - qty });
           }}
