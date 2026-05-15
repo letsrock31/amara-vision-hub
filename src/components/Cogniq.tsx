@@ -156,8 +156,8 @@ export function Cogniq() {
 
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-40 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg"
-        style={{ background: "#534ab7" }}
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg"
+        style={{ background: "#534AB7" }}
         aria-label="Open Cogniq AI"
       >
         <MessageCircle size={20} />
