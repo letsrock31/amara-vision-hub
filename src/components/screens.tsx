@@ -1159,17 +1159,63 @@ export function PlaceReleaseOrder() {
   const [qty, setQty] = useState(10);
   const [site, setSite] = useState(SITES[0].id);
   const [date, setDate] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
+  const [confirmed, setConfirmed] = useState<{ ro: string; eta: string } | null>(null);
+  const { setView } = useApp();
   const contract = mine.find((c) => c.id === contractId)!;
   const overage = qty > contract.remaining;
   const inputStyle = { border: "1px solid #D1D5DB", fontSize: 13, background: "#FFFFFF", padding: "8px 10px", borderRadius: 6 } as const;
+
+  if (confirmed) {
+    return (
+      <div>
+        <PageHeader title="Release Order Confirmed" sub="Your contract release order has been recorded" />
+        <div className="card-base max-w-2xl mx-auto text-center py-8">
+          <div className="inline-flex items-center justify-center" style={{ width: 64, height: 64, borderRadius: "50%", background: "#DCFCE7" }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="3"><path d="M5 12l5 5 9-9" /></svg>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginTop: 16 }}>Order placed successfully</div>
+          <div style={{ fontSize: 14, color: "#4B5563", marginTop: 6 }}>
+            Reference Release Order ID
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#5B5BF5", marginTop: 6 }}>{confirmed.ro}</div>
+          <div className="grid grid-cols-2 gap-3 mt-6 text-left max-w-md mx-auto">
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div className="stat-label">Contract</div>
+              <div style={{ fontWeight: 600 }}>{contract.id}</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div className="stat-label">Product</div>
+              <div style={{ fontWeight: 600 }}>{contract.product}</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div className="stat-label">Quantity</div>
+              <div style={{ fontWeight: 600 }}>{qty} units</div>
+            </div>
+            <div className="p-3 rounded" style={{ background: "#F9FAFB", border: "1px solid #E5E7EB" }}>
+              <div className="stat-label">Order Total</div>
+              <div style={{ fontWeight: 600 }}>{fmtINRLakh(qty * contract.rate)}</div>
+            </div>
+            <div className="p-3 rounded col-span-2" style={{ background: "#EEF0FF", border: "1px solid #C7CCF7" }}>
+              <div className="stat-label">Expected Delivery</div>
+              <div style={{ fontWeight: 700, color: "#2B31B8" }}>{confirmed.eta}</div>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-center mt-6">
+            <Btn variant="ghost" onClick={() => setConfirmed(null)}>Place Another</Btn>
+            <Btn onClick={() => setView("contracts")}>Back to My Contracts</Btn>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
       <PageHeader title="Place Release Order" sub="Order against an active rate contract" />
       <AISuggestions
         items={[
-          { text: "Contract INDT-2024-002 has only 20 units left — consider topping up from INDT-2025-009.", action: "Switch Contract" },
-          { text: "Tower Site NCR-041 has 6 critical units — prioritize this delivery site.", action: "Set Site" },
+          { text: "Contract INDT-2024-002 has only 20 units left — consider topping up from INDT-2025-009.", action: "Switch Contract", onAction: () => setContractId("INDT-2025-009") },
+          { text: "Tower Site NCR-041 has 6 critical units — prioritize this delivery site.", action: "Set Site", onAction: () => setSite("NCR-041") },
         ]}
       />
       <div className="grid lg:grid-cols-3 gap-4">
@@ -1177,7 +1223,10 @@ export function PlaceReleaseOrder() {
           className="card-base lg:col-span-2 space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!overage) toast.success(`Release order placed — ${qty} × ${contract.product}`);
+            if (overage) return;
+            const ro = "RO-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000);
+            const etaDate = new Date(new Date(date).getTime() + 2 * 86400000);
+            setConfirmed({ ro, eta: etaDate.toDateString() });
           }}
         >
           <div>
