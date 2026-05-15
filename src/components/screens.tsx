@@ -2681,9 +2681,27 @@ export function PlaceReleaseOrder() {
           </div>
           <div>
             <label className="stat-label block mb-1">Special Instructions</label>
-            <textarea rows={3} className="w-full" style={inputStyle} />
+            <textarea rows={3} value={instructions} onChange={(e) => setInstructions(e.target.value)} className="w-full" style={inputStyle} />
           </div>
-          <Btn type="submit" disabled={overage}>Submit Release Order</Btn>
+          <label className="flex items-center gap-2" style={{ fontSize: 13, color: "#0A0A0F", fontWeight: 600 }}>
+            <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+            Urgent delivery (+₹5,000 surcharge, next-day dispatch)
+          </label>
+          <div className="flex gap-2">
+            <Btn type="submit" disabled={overage}>Submit Release Order</Btn>
+            <Btn
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setDraftReleaseOrder({ contractId, qty, site, date, urgent, instructions });
+                addNotification({ text: `Draft saved for ${contract.id}`, type: "info" });
+                toast.success("Draft saved");
+                setView("contracts");
+              }}
+            >
+              Save as Draft
+            </Btn>
+          </div>
         </form>
 
         <div className="card-base h-fit" style={{ borderTop: "3px solid #5B5BF5" }}>
