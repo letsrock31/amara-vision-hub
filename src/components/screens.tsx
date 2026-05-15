@@ -1121,7 +1121,58 @@ export function AdminDashboard() {
 }
 
 /* =================== RSM DASHBOARD =================== */
+const RSM_DEALERS = [
+  { id: "D1", name: "Sharma Auto Parts", city: "Delhi", mtd: 184000, target: 250000, lastOrder: "9 days ago", status: "Dormant" },
+  { id: "D2", name: "Verma Battery House", city: "Gurgaon", mtd: 412000, target: 350000, lastOrder: "Today", status: "Active" },
+  { id: "D3", name: "Singh Motors", city: "Noida", mtd: 298000, target: 300000, lastOrder: "2 days ago", status: "Active" },
+  { id: "D4", name: "Kapoor Spares", city: "Faridabad", mtd: 156000, target: 220000, lastOrder: "5 days ago", status: "Active" },
+  { id: "D5", name: "Bharat Auto", city: "Ghaziabad", mtd: 92000, target: 200000, lastOrder: "11 days ago", status: "Dormant" },
+  { id: "D6", name: "Royal Battery", city: "Meerut", mtd: 367000, target: 320000, lastOrder: "1 day ago", status: "Active" },
+];
+
+function ScheduleVisitModal({ dealer, onClose }: { dealer: { name: string; city: string }; onClose: () => void }) {
+  const [date, setDate] = useState("");
+  const [purpose, setPurpose] = useState("Quarterly review");
+  const [done, setDone] = useState(false);
+  const inp = { border: "1px solid #D1D5DB", fontSize: 13, padding: "8px 10px", borderRadius: 6, width: "100%" } as const;
+  return (
+    <CenterModal widthClass="max-w-md">
+      <div className="px-5 py-4 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700 }}>Schedule Visit — {dealer.name}</h3>
+        <button onClick={onClose}><X size={18} /></button>
+      </div>
+      <div className="p-5">
+        {done ? (
+          <div className="text-center py-3">
+            <CheckCircle2 size={48} color="#15803D" style={{ margin: "0 auto" }} />
+            <div style={{ fontSize: 15, fontWeight: 700, marginTop: 12 }}>Visit scheduled for {date}</div>
+            <div style={{ fontSize: 13, color: "#4B5563", marginTop: 6 }}>{dealer.name} · {dealer.city} — {purpose}</div>
+            <div className="mt-5"><Btn onClick={onClose}>Close</Btn></div>
+          </div>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); setDone(true); }} className="space-y-3">
+            <div><label className="stat-label block mb-1">Visit Date</label><input type="date" required value={date} onChange={(e) => setDate(e.target.value)} style={inp} /></div>
+            <div><label className="stat-label block mb-1">Purpose</label>
+              <select value={purpose} onChange={(e) => setPurpose(e.target.value)} style={inp}>
+                <option>Quarterly review</option><option>New product launch</option><option>Reactivation visit</option><option>Training</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Btn variant="ghost" size="sm" onClick={onClose}>Cancel</Btn>
+              <Btn type="submit">Schedule</Btn>
+            </div>
+          </form>
+        )}
+      </div>
+    </CenterModal>
+  );
+}
+
 export function RSMDashboard() {
+  const [visitDealer, setVisitDealer] = useState<typeof RSM_DEALERS[number] | null>(null);
+  const [priorityIds, setPriorityIds] = useState<string[]>([]);
+  const togglePriority = (id: string) => setPriorityIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
+
   return (
     <div>
       <PageHeader title="My Region — NCR & North India" sub="Dealer performance, demand trends, and Cogniq recommendations" />
@@ -1138,7 +1189,58 @@ export function RSMDashboard() {
         <StatCard label="Dormant Dealers" value="6" change="No order > 7 days" accent="amber" />
         <StatCard label="Stock-out Alerts" value="2" change="Within 12 days" accent="amber" />
       </div>
+
+      <div className="rounded-lg mb-5" style={{ border: "1px solid #E5E7EB", background: "#FFFFFF" }}>
+        <div className="px-4 py-3 flex justify-between items-center" style={{ borderBottom: "1px solid #E5E7EB" }}>
+          <div>
+            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Dealer Performance</h3>
+            <div style={{ fontSize: 12, color: "#4B5563" }}>MTD sales vs target — click a dealer to schedule a visit or flag as priority</div>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full" style={{ fontSize: 12 }}>
+            <thead style={{ background: "#F9FAFB" }}>
+              <tr style={{ color: "#4B5563", textTransform: "uppercase", textAlign: "left" }}>
+                <th className="py-2 px-3">Dealer</th><th className="py-2 px-3">City</th>
+                <th className="py-2 px-3">MTD</th><th className="py-2 px-3" style={{ minWidth: 140 }}>Target Achievement</th>
+                <th className="py-2 px-3">Last Order</th><th className="py-2 px-3">Status</th><th className="py-2 px-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {RSM_DEALERS.map((d) => {
+                const pct = Math.min(100, Math.round((d.mtd / d.target) * 100));
+                const isPri = priorityIds.includes(d.id);
+                return (
+                  <tr key={d.id} style={{ borderTop: "1px solid #E5E7EB" }}>
+                    <td className="py-2 px-3" style={{ fontWeight: 600 }}>
+                      {isPri && <span style={{ color: "#C00000", marginRight: 4 }}>★</span>}{d.name}
+                    </td>
+                    <td className="py-2 px-3" style={{ color: "#4B5563" }}>{d.city}</td>
+                    <td className="py-2 px-3">₹{(d.mtd / 1000).toFixed(0)}k</td>
+                    <td className="py-2 px-3">
+                      <div className="h-2 rounded-full" style={{ background: "#E5E7EB" }}>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct >= 100 ? "#00A651" : pct >= 70 ? "#EF9F27" : "#C00000" }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: "#4B5563", marginTop: 2 }}>{pct}% of ₹{(d.target / 1000).toFixed(0)}k</div>
+                    </td>
+                    <td className="py-2 px-3" style={{ color: d.status === "Dormant" ? "#C00000" : "#4B5563" }}>{d.lastOrder}</td>
+                    <td className="py-2 px-3"><StatusBadge status={d.status} /></td>
+                    <td className="py-2 px-3">
+                      <div className="flex gap-1">
+                        <Btn size="sm" variant="ghost" onClick={() => setVisitDealer(d)}>Visit</Btn>
+                        <Btn size="sm" variant="ghost" onClick={() => togglePriority(d.id)}>{isPri ? "Unflag" : "Flag"}</Btn>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <SecondarySales />
+      {visitDealer && <ScheduleVisitModal dealer={visitDealer} onClose={() => setVisitDealer(null)} />}
     </div>
   );
 }
