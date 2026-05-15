@@ -196,7 +196,7 @@ export function ProductCatalog() {
                   <span>Subtotal</span><span>{fmtINR(subtotal)}</span>
                 </div>
                 <button
-                  onClick={() => { setCart({}); setCartOpen(false); alert("Order placed (demo)"); }}
+                  onClick={() => { setCart([]); setCartOpen(false); alert("Order placed (demo)"); }}
                   className="w-full py-2.5 rounded-md text-white"
                   style={{ background: "#c00000", fontSize: 13 }}
                 >
