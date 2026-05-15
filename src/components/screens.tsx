@@ -1445,10 +1445,10 @@ export function RSMDashboard() {
         ]}
       />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-        <StatCard label="Active Dealers" value="42" change="3 new this month" accent="crimson" />
-        <StatCard label="Region Sales (MTD)" value="₹4.82 Cr" change="+14% vs last month" accent="green" />
-        <StatCard label="Dormant Dealers" value="6" change="No order > 7 days" accent="amber" />
-        <StatCard label="Stock-out Alerts" value="2" change="Within 12 days" accent="amber" />
+        <StatCard label="Active Dealers" value="42" change="3 new this month" accent="crimson" onClick={() => setView("dealer-orders")} />
+        <StatCard label="Region Sales (MTD)" value="₹4.82 Cr" change="+14% vs last month" accent="green" onClick={() => setView("secondary-sales")} />
+        <StatCard label="Dormant Dealers" value="6" change="No order > 7 days" accent="amber" onClick={() => { setDealerOrdersFilter("dormant"); setView("dealer-orders"); }} />
+        <StatCard label="Stock-out Alerts" value="2" change="Within 12 days" accent="amber" onClick={() => setView("secondary-sales")} />
       </div>
 
       <div className="rounded-lg mb-5" style={{ border: "1px solid #E5E7EB", background: "#FFFFFF" }}>
