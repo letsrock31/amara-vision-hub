@@ -13,28 +13,32 @@ export const PROFILES: Profile[] = [
   "Industrial Customer",
 ];
 
-// Real-looking product images (Unsplash car battery photography — stable URLs)
+// Real product imagery sourced from Amara Raja / Amaron's public S3 assets
 const IMG = {
-  amaron4w: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?w=600&q=80&auto=format&fit=crop",
-  amaron2w: "https://images.unsplash.com/photo-1609205807107-454f1c4cd8d8?w=600&q=80&auto=format&fit=crop",
-  powerzone: "https://images.unsplash.com/photo-1620714223084-8fcacc6dfd8d?w=600&q=80&auto=format&fit=crop",
-  industrial: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=600&q=80&auto=format&fit=crop",
-  freshpack: "https://images.unsplash.com/photo-1632823471565-1ecdf5c6da77?w=600&q=80&auto=format&fit=crop",
+  passenger: "https://amaron-prod-images.s3.ap-south-1.amazonaws.com/2022-07/Passanger-Veehicle.png",
+  twoWheeler: "https://amaron-prod-images.s3.ap-south-1.amazonaws.com/2022-07/Two-Wheeler.png",
+  threeWheeler: "https://amaron-prod-images.s3.ap-south-1.amazonaws.com/2022-07/Three-Wheeler.png",
+  commercial: "https://amaron-prod-images.s3.ap-south-1.amazonaws.com/2022-07/Commercial-Vehicle.png",
+  farm: "https://amaron-prod-images.s3.ap-south-1.amazonaws.com/2022-07/Farm-Vehicle.png",
+  inverter: "https://amaron-prod-images.s3.ap-south-1.amazonaws.com/2022-07/Invrtor-battery.png",
+  eRickshaw: "https://amaron-prod-images.s3.ap-south-1.amazonaws.com/2022-07/E-rikshaw.png",
+  industrial: "https://amaron-prod-images.s3.ap-south-1.amazonaws.com/2022-07/other-application.png",
 };
 
+// Real Amara Raja / Amaron product lineup
 export const PRODUCTS = [
-  { id: "P1", name: "Amaron Pro 35Ah 4W", brand: "Amaron", type: "4W", spec: "12V / 35Ah · 55B24L", price: 4200, stock: "In Stock", image: IMG.amaron4w },
-  { id: "P2", name: "Amaron Hi-Life 2.5Ah 2W", brand: "Amaron", type: "2W", spec: "12V / 2.5Ah · ETZ4", price: 980, stock: "In Stock", image: IMG.amaron2w },
-  { id: "P3", name: "Powerzone 45Ah 4W", brand: "Powerzone", type: "4W", spec: "12V / 45Ah · DIN44", price: 3600, stock: "Low Stock", image: IMG.powerzone },
-  { id: "P4", name: "Amaron FreshPack 60Ah 4W", brand: "Amaron", type: "4W", spec: "12V / 60Ah · DIN66", price: 5100, stock: "In Stock", image: IMG.freshpack },
-  { id: "P5", name: "Powerzone 2.5Ah 2W", brand: "Powerzone", type: "2W", spec: "12V / 2.5Ah", price: 820, stock: "In Stock", image: IMG.amaron2w },
-  { id: "P6", name: "Quanta 150Ah Industrial", brand: "Quanta", type: "Industrial", spec: "12V / 150Ah · SMF VRLA", price: 18500, stock: "In Stock", image: IMG.industrial },
-  { id: "P7", name: "Amaron Hi-Way 100Ah CV", brand: "Amaron", type: "4W", spec: "12V / 100Ah · Commercial", price: 8900, stock: "In Stock", image: IMG.amaron4w },
-  { id: "P8", name: "AmaronVolt 200Ah Industrial", brand: "AmaronVolt", type: "Industrial", spec: "12V / 200Ah · Telecom", price: 22000, stock: "In Stock", image: IMG.industrial },
-  { id: "P9", name: "Amaron Black 80Ah 4W", brand: "Amaron", type: "4W", spec: "12V / 80Ah · DIN80", price: 6800, stock: "In Stock", image: IMG.amaron4w },
-  { id: "P10", name: "Powerzone Hummer 65Ah 4W", brand: "Powerzone", type: "4W", spec: "12V / 65Ah", price: 4900, stock: "Low Stock", image: IMG.powerzone },
-  { id: "P11", name: "Amaron Pro 9Ah 2W", brand: "Amaron", type: "2W", spec: "12V / 9Ah · Bullet", price: 1450, stock: "In Stock", image: IMG.amaron2w },
-  { id: "P12", name: "Quanta 100Ah Industrial", brand: "Quanta", type: "Industrial", spec: "12V / 100Ah · UPS", price: 14200, stock: "In Stock", image: IMG.industrial },
+  { id: "P1", name: "Amaron Pro 55B24L", brand: "Amaron", type: "4W", spec: "12V / 45Ah · Passenger Car", price: 5200, stock: "In Stock", image: IMG.passenger },
+  { id: "P2", name: "Amaron Hi-Life ETZ4", brand: "Amaron", type: "2W", spec: "12V / 2.5Ah · Two-Wheeler", price: 980, stock: "In Stock", image: IMG.twoWheeler },
+  { id: "P3", name: "Amaron Black DIN44", brand: "Amaron", type: "4W", spec: "12V / 44Ah · ASG Stamped Grid", price: 4400, stock: "Low Stock", image: IMG.passenger },
+  { id: "P4", name: "Amaron FreshPack DIN66", brand: "Amaron", type: "4W", spec: "12V / 66Ah · Maintenance Free", price: 6100, stock: "In Stock", image: IMG.passenger },
+  { id: "P5", name: "Powerzone PZ-2.5L", brand: "Powerzone", type: "2W", spec: "12V / 2.5Ah · Two-Wheeler", price: 820, stock: "In Stock", image: IMG.twoWheeler },
+  { id: "P6", name: "Amaron Quanta 12AL150", brand: "Quanta", type: "Industrial", spec: "12V / 150Ah · SMF VRLA UPS", price: 18500, stock: "In Stock", image: IMG.industrial },
+  { id: "P7", name: "Amaron Hi-Way CMV100", brand: "Amaron", type: "4W", spec: "12V / 100Ah · Commercial Vehicle", price: 8900, stock: "In Stock", image: IMG.commercial },
+  { id: "P8", name: "AmaronVolt 12V 200Ah", brand: "AmaronVolt", type: "Industrial", spec: "12V / 200Ah · Telecom Tubular", price: 22000, stock: "In Stock", image: IMG.industrial },
+  { id: "P9", name: "Amaron Harvest 100Ah", brand: "Amaron", type: "4W", spec: "12V / 100Ah · Tractor / Farm", price: 7400, stock: "In Stock", image: IMG.farm },
+  { id: "P10", name: "Powerzone Hummer DIN65", brand: "Powerzone", type: "4W", spec: "12V / 65Ah · Passenger Car", price: 4900, stock: "Low Stock", image: IMG.passenger },
+  { id: "P11", name: "Amaron Pro Bike Rider 9Ah", brand: "Amaron", type: "2W", spec: "12V / 9Ah · Bullet / Cruiser", price: 1450, stock: "In Stock", image: IMG.twoWheeler },
+  { id: "P12", name: "Amaron Inverter CR150TT", brand: "Amaron", type: "Industrial", spec: "12V / 150Ah · Tall Tubular Inverter", price: 14200, stock: "In Stock", image: IMG.inverter },
 ];
 
 export const DEALER_ORDERS = [
