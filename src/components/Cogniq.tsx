@@ -118,9 +118,9 @@ export function Cogniq() {
                   className="px-2 py-1 rounded-full"
                   style={{
                     fontSize: 10,
-                    background: "#14142A",
-                    color: "#534ab7",
-                    border: "1px solid #3A3470",
+                    background: "#1A1A3A",
+                    color: "#AFA9EC",
+                    border: "0.5px solid #3A3470",
                   }}
                 >
                   {c.q.length > 50 ? c.q.slice(0, 48) + "…" : c.q}
